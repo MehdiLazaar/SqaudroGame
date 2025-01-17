@@ -1,5 +1,5 @@
 <?php
-namespace squadroGame;
+namespace src;
 use InvalidArgumentException;
 
 class PieceSquadro {

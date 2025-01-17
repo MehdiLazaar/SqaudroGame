@@ -1,9 +1,10 @@
 <?php
 
-namespace squadroGame;
+namespace src;
 
 use InvalidArgumentException;
 use OutOfBoundsException;
+use squadroGame\PieceSquadro;
 
 class ArrayPieceSquadro implements \ArrayAccess, \Countable {
     // Tableau pour stocker les pièces
