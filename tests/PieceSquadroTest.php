@@ -1,10 +1,12 @@
 <?php
 namespace Squadro;
 
-require_once 'PieceSquadro.php';
-
+require_once '../src/PieceSquadro.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 use PHPUnit\Framework\TestCase;
+use src\PieceSquadro;
+
 
 /**
  * Classe de test pour la classe PieceSquadro.

@@ -26,7 +26,7 @@ class PieceSquadro {
 
     // Methode static pour initialiser les pieces
     public static function initVide(): PieceSquadro {
-        return new PieceSquadro(self::VIDE, self::NEUTRE);
+        return new PieceSquadro(self::VIDE, self::VIDE);
     }
 
     public static function initNeutre(): PieceSquadro {
@@ -65,7 +65,7 @@ class PieceSquadro {
 
     // Convertion de l'objet en chaine de caractère
     public function __toString(): string {
-        return "PieceSquadro [couleur={$this->couleur}, direction={$this->direction}]";
+        return "PieceSquadro [Couleur: {$this->couleur}, Direction: {$this->direction}]";
     }
 
     //Convertion de l'objet en JSON
