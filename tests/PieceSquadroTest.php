@@ -1,5 +1,4 @@
 <?php
-namespace Squadro;
 
 require_once '../src/PieceSquadro.php';
 require __DIR__ . '/../vendor/autoload.php';

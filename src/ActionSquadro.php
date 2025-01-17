@@ -2,7 +2,8 @@
 
 namespace src;
 
-use PlateauSquadro;
+use Exception;
+use src\PlateauSquadro;
 
 class ActionSquadro {
     private PlateauSquadro $plateau;
