@@ -2,6 +2,8 @@
 
 namespace src;
 
+use PlateauSquadro;
+
 class ActionSquadro {
     private PlateauSquadro $plateau;
 
