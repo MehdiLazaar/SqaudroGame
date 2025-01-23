@@ -6,7 +6,7 @@ use Exception;
 use src\PlateauSquadro;
 
 class ActionSquadro {
-    private PlateauSquadro $plateau;
+    public PlateauSquadro $plateau;
 
     public function __construct(PlateauSquadro $p) {
         $this->plateau = $p;
@@ -22,7 +22,7 @@ class ActionSquadro {
         $piece = $this->plateau->getPiece($x, $y);
 
         // Vérifie si la case contient une pièce valide
-        if ($piece->getCouleur() === PieceSquadro::VIDE) {
+        if ($piece === null || $piece->getCouleur() === PieceSquadro::VIDE) {
             return false;
         }
 
@@ -59,7 +59,7 @@ class ActionSquadro {
         }
 
         // Gère les pièces sautées par le déplacement
-        $this->gererReculPieces($x, $y, $newX, $newY);
+        $this->reculePiece($x, $y, $newX, $newY);
     }
 
     /**
@@ -69,6 +69,10 @@ class ActionSquadro {
      */
     public function reculePiece(int $x, int $y): void {
         $piece = $this->plateau->getPiece($x, $y);
+        if ($piece === null) {
+            throw new Exception("Aucune pièce à reculer à la position ($x, $y).");
+        }
+
         $direction = $piece->getDirection();
 
         // Réinitialise la position de la pièce selon sa direction initiale
@@ -113,24 +117,11 @@ class ActionSquadro {
      * @param int $y La position en y.
      * @return bool True si la pièce doit être retirée, false sinon.
      */
-    private function pieceDoitSortir(PieceSquadro $piece, int $x, int $y): bool {
+    public function pieceDoitSortir(PieceSquadro $piece, int $x, int $y): bool {
         $direction = $piece->getDirection();
         return ($direction === PieceSquadro::NORD && $x === 0) ||
             ($direction === PieceSquadro::SUD && $x === 5) ||
             ($direction === PieceSquadro::EST && $y === 5) ||
             ($direction === PieceSquadro::OUEST && $y === 0);
-    }
-
-    /**
-     * Gère les pièces adverses sautées lors du déplacement.
-     * @param int $startX Position de départ en x.
-     * @param int $startY Position de départ en y.
-     * @param int $endX Position d'arrivée en x.
-     * @param int $endY Position d'arrivée en y.
-     */
-    private function gererReculPieces(int $startX, int $startY, int $endX, int $endY): void {
-        // Détection des pièces sautées
-        // Cette logique dépend des règles du jeu Squadro
-        echo "Gestion des pièces sautées entre ($startX, $startY) et ($endX, $endY)";
     }
 }

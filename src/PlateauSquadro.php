@@ -94,7 +94,7 @@ class PlateauSquadro
 
         $key = array_search($index, $this->lignesJouables, true);
         unset($this->lignesJouables[$key]);
-        $this->lignesJouables = array_values($this->lignesJouables); // Réindexation des valeurs
+        $this->lignesJouables = array_values($this->lignesJouables);
     }
 
     public function retireColonneJouable(int $index): void
