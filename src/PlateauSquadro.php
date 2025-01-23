@@ -125,16 +125,37 @@ class PlateauSquadro
 
         if ($couleur === PieceSquadro::BLANC) {
             if ($direction === PieceSquadro::EST) {
+                // Vérifie que $y est un indice valide pour BLANC_V_ALLER
+                if ($y < 0 || $y >= count(self::BLANC_V_ALLER)) {
+                    throw new InvalidArgumentException("Indice de colonne invalide pour les pièces blanches : {$y}");
+                }
                 $vitesse = self::BLANC_V_ALLER[$y]; // Vitesse à l'aller pour les pièces blanches
             } elseif ($direction === PieceSquadro::OUEST) {
+                // Vérifie que $y est un indice valide pour BLANC_V_RETOUR
+                if ($y < 0 || $y >= count(self::BLANC_V_RETOUR)) {
+                    throw new InvalidArgumentException("Indice de colonne invalide pour les pièces blanches : {$y}");
+                }
                 $vitesse = self::BLANC_V_RETOUR[$y]; // Vitesse au retour pour les pièces blanches
             }
         } elseif ($couleur === PieceSquadro::NOIR) {
             if ($direction === PieceSquadro::NORD) {
+                // Vérifie que $x est un indice valide pour NOIR_V_ALLER
+                if ($x < 0 || $x >= count(self::NOIR_V_ALLER)) {
+                    throw new InvalidArgumentException("Indice de ligne invalide pour les pièces noires : {$x}");
+                }
                 $vitesse = self::NOIR_V_ALLER[$x]; // Vitesse à l'aller pour les pièces noires
             } elseif ($direction === PieceSquadro::SUD) {
+                // Vérifie que $x est un indice valide pour NOIR_V_RETOUR
+                if ($x < 0 || $x >= count(self::NOIR_V_RETOUR)) {
+                    throw new InvalidArgumentException("Indice de ligne invalide pour les pièces noires : {$x}");
+                }
                 $vitesse = self::NOIR_V_RETOUR[$x]; // Vitesse au retour pour les pièces noires
             }
+        }
+
+        // Si la vitesse est nulle, retourne les coordonnées d'origine
+        if ($vitesse === 0) {
+            return [$x, $y];
         }
 
         // Calcule les nouvelles coordonnées en fonction de la direction et de la vitesse
@@ -148,7 +169,11 @@ class PlateauSquadro
             case PieceSquadro::OUEST: $newY -= $vitesse; break;
         }
 
-        // Retourne les coordonnées même si elles sont hors limites
+        // Limite les coordonnées aux limites du plateau (0 à 6)
+        $newX = max(0, min(6, $newX));
+        $newY = max(0, min(6, $newY));
+
+        // Retourne les coordonnées
         return [$newX, $newY];
     }
 

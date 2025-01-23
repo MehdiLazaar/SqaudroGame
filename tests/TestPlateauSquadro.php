@@ -6,7 +6,6 @@ use src\PlateauSquadro;
 use src\PieceSquadro;
 use PHPUnit\Framework\TestCase;
 
-
 class TestPlateauSquadro extends TestCase
 {
     private PlateauSquadro $plateau;
@@ -99,6 +98,17 @@ class TestPlateauSquadro extends TestCase
     }
 
     // Teste la méthode getCoordDestination avec les vitesses de déplacement
+    public function testGetCoordDestinationBlancAller(): void
+    {
+        // Place une pièce blanche en (6, 1) avec une direction EST (aller)
+        $pieceBlanche = PieceSquadro::initBlancEst();
+        $this->plateau->setPiece($pieceBlanche, 6, 1);
+
+        // Teste le déplacement d'une pièce blanche vers l'est
+        $coords = $this->plateau->getCoordDestination(6, 1);
+        $this->assertEquals([6, 2], $coords); // Vitesse BLANC_V_ALLER[1] = 1
+    }
+
     public function testGetCoordDestinationBlancRetour(): void
     {
         // Place une pièce blanche en (6, 3) avec une direction OUEST (retour)
@@ -108,6 +118,28 @@ class TestPlateauSquadro extends TestCase
         // Teste le déplacement d'une pièce blanche vers l'ouest
         $coords = $this->plateau->getCoordDestination(6, 3);
         $this->assertEquals([6, 1], $coords); // Vitesse BLANC_V_RETOUR[3] = 2
+    }
+
+    public function testGetCoordDestinationNoirNord(): void
+    {
+        // Place une pièce noire en (0, 3) avec une direction NORD (aller)
+        $pieceNoire = PieceSquadro::initNoirNord();
+        $this->plateau->setPiece($pieceNoire, 0, 3);
+
+        // Teste le déplacement d'une pièce noire vers le nord
+        $coords = $this->plateau->getCoordDestination(0, 3);
+        $this->assertEquals([0, 3], $coords); // Vitesse NOIR_V_ALLER[0] = 3, mais limité à 0
+    }
+
+    public function testGetCoordDestinationNoirSud(): void
+    {
+        // Place une pièce noire en (0, 3) avec une direction SUD (retour)
+        $pieceNoire = PieceSquadro::initNoirSud();
+        $this->plateau->setPiece($pieceNoire, 0, 3);
+
+        // Teste le déplacement d'une pièce noire vers le sud
+        $coords = $this->plateau->getCoordDestination(0, 3);
+        $this->assertEquals([0, 3], $coords); // Vitesse NOIR_V_RETOUR[0] = 0 (pas de déplacement)
     }
 
     public function testGetCoordDestinationCaseVide(): void
@@ -125,6 +157,7 @@ class TestPlateauSquadro extends TestCase
         $this->expectExceptionMessage("Aucune pièce à déplacer à la case (2, 2)");
         $this->plateau->getCoordDestination(2, 2); // Case neutre
     }
+
     public function testGetDestinationCaseOccupee(): void
     {
         // Place une pièce blanche en (6, 1) avec une direction EST (aller)
