@@ -35,9 +35,13 @@ class PieceSquadroUI {
         $couleur = $piece->getCouleur();
         $desactivee = $active ? '' : 'disabled';
 
+        // Détermine la classe CSS en fonction de la couleur
         $class = 'piece' . ($couleur === PieceSquadro::BLANC ? 'Blanche' : 'Noir');
 
-        return '<button type="button" class="' . $class . '" data-x="' . $x . '" data-y="' . $y . '" ' . $desactivee . '></button>';
+        // Stocke les coordonnées x et y dans l'attribut value
+        $value = $x . ',' . $y;
+
+        return '<button type="button" class="' . $class . '" value="' . $value . '" ' . $desactivee . '></button>';
     }
     /**
      * Génère le code HTML d'un formulaire pour envoyer les coordonnées de la pièce cliquée.
@@ -48,7 +52,7 @@ class PieceSquadroUI {
      */
     public static function generateForm(int $x, int $y): string
     {
-        return '<form action="play.php" method="POST">
+        return '<form action="#" method="POST">
                     <input type="hidden" name="x" value="' . $x . '">
                     <input type="hidden" name="y" value="' . $y . '">
                     <button type="submit" class="piece">Déplacer</button>
