@@ -26,17 +26,20 @@ class TestPlateauSquadro extends TestCase
             $this->assertCount(7, $ligne);
         }
 
-        // Vérifie que les pièces blanches et noires sont bien placées
-        for ($colonne = 1; $colonne <= 5; $colonne++) {
-            $pieceBlanche = $this->plateau->getPiece(6, $colonne);
+        // Vérifie que les pièces blanches sont bien à gauche (ouest)
+        for ($ligne = 1; $ligne <= 5; $ligne++) {
+            $pieceBlanche = $this->plateau->getPiece($ligne, 0);
             $this->assertNotNull($pieceBlanche);
             $this->assertEquals(PieceSquadro::BLANC, $pieceBlanche->getCouleur());
-            $this->assertEquals(PieceSquadro::EST, $pieceBlanche->getDirection());
+            $this->assertEquals(PieceSquadro::OUEST, $pieceBlanche->getDirection()); // Vérifie OUEST
+        }
 
-            $pieceNoire = $this->plateau->getPiece(0, $colonne);
+        // Vérifie que les pièces noires sont bien en bas (sud)
+        for ($colonne = 1; $colonne <= 5; $colonne++) {
+            $pieceNoire = $this->plateau->getPiece(6, $colonne);
             $this->assertNotNull($pieceNoire);
             $this->assertEquals(PieceSquadro::NOIR, $pieceNoire->getCouleur());
-            $this->assertEquals(PieceSquadro::NORD, $pieceNoire->getDirection());
+            $this->assertEquals(PieceSquadro::SUD, $pieceNoire->getDirection()); // Vérifie SUD
         }
 
         // Vérifie que les cases neutres sont bien initialisées
@@ -57,11 +60,11 @@ class TestPlateauSquadro extends TestCase
         $this->assertNull($this->plateau->getPiece(6, 6));
 
         // Vérifie que les cases avec des pièces retournent bien les pièces
-        $pieceBlanche = $this->plateau->getPiece(6, 1);
+        $pieceBlanche = $this->plateau->getPiece(1, 0); // Pièce blanche à gauche (ouest)
         $this->assertNotNull($pieceBlanche);
         $this->assertEquals(PieceSquadro::BLANC, $pieceBlanche->getCouleur());
 
-        $pieceNoire = $this->plateau->getPiece(0, 1);
+        $pieceNoire = $this->plateau->getPiece(6, 1); // Pièce noire en bas (sud)
         $this->assertNotNull($pieceNoire);
         $this->assertEquals(PieceSquadro::NOIR, $pieceNoire->getCouleur());
     }
@@ -188,8 +191,14 @@ class TestPlateauSquadro extends TestCase
     public function testToString(): void
     {
         $stringRepresentation = (string) $this->plateau;
-        $this->assertStringContainsString("[BLANC EST]", $stringRepresentation);
-        $this->assertStringContainsString("[NOIR NORD]", $stringRepresentation);
+
+        // Vérifie que les pièces blanches sont correctement représentées
+        $this->assertStringContainsString("[BLANC OUEST]", $stringRepresentation);
+
+        // Vérifie que les pièces noires sont correctement représentées
+        $this->assertStringContainsString("[NOIR SUD]", $stringRepresentation);
+
+        // Vérifie que les cases vides sont correctement représentées
         $this->assertStringContainsString("[VIDE]", $stringRepresentation);
     }
 }

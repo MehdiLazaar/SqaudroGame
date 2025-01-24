@@ -23,12 +23,12 @@ class PieceSquadroUITest
         echo PieceSquadroUI::generationCaseNeutre() . "\n\n";
 
         // Test 3 : Génération d'une pièce noire (non cliquable)
-        $pieceNoire = PieceSquadro::initNoirNord();
+        $pieceNoire = PieceSquadro::initNoirSud(); // Utilisez initNoirSud() au lieu de initNoirNord()
         echo "Test 3 - Génération d'une pièce noire (non cliquable) :\n";
         echo PieceSquadroUI::generationPiece($pieceNoire, 0, 3) . "\n\n";
 
         // Test 4 : Génération d'une pièce blanche (cliquable)
-        $pieceBlanche = PieceSquadro::initBlancEst();
+        $pieceBlanche = PieceSquadro::initBlancOuest(); // Utilisez initBlancOuest() au lieu de initBlancEst()
         echo "Test 4 - Génération d'une pièce blanche (cliquable) :\n";
         echo PieceSquadroUI::generationPiece($pieceBlanche, 6, 1, true) . "\n\n";
 
@@ -39,6 +39,10 @@ class PieceSquadroUITest
         // Test 6 : Génération du plateau de jeu pour le joueur blanc
         echo "Test 6 - Génération du plateau de jeu pour le joueur blanc :\n";
         echo PieceSquadroUI::generatePlateau($plateau, PieceSquadro::BLANC) . "\n";
+
+        // Test 7 : Génération du plateau de jeu pour le joueur noir
+        echo "Test 7 - Génération du plateau de jeu pour le joueur noir :\n";
+        echo PieceSquadroUI::generatePlateau($plateau, PieceSquadro::NOIR) . "\n";
     }
 }
 

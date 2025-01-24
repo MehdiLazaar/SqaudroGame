@@ -43,17 +43,18 @@ class PlateauSquadro
 
     private function initCasesBlanches(): void
     {
-        $ligneBlanche = 6;
-        for ($colonne = 1; $colonne <= 5; $colonne++) {
-            $this->plateau[$ligneBlanche][$colonne] = PieceSquadro::initBlancEst();
+        // Ouest du plateau
+        $colonneBlanche = 0;
+        for ($ligne = 1; $ligne <= 5; $ligne++) {
+            $this->plateau[$ligne][$colonneBlanche] = PieceSquadro::initBlancOuest();
         }
     }
 
     private function initCasesNoires(): void
     {
-        $ligneNoire = 0;
+        $ligneNoire = 6;
         for ($colonne = 1; $colonne <= 5; $colonne++) {
-            $this->plateau[$ligneNoire][$colonne] = PieceSquadro::initNoirNord();
+            $this->plateau[$ligneNoire][$colonne] = PieceSquadro::initNoirSud();
         }
     }
 
@@ -240,7 +241,7 @@ class PlateauSquadro
                     $output .= "[VIDE] ";
                 } else {
                     $couleur = $piece->getCouleur() === PieceSquadro::BLANC ? "BLANC" : "NOIR";
-                    $direction = $piece->getDirection() === PieceSquadro::EST ? "EST" : "NORD";
+                    $direction = $piece->getDirection() === PieceSquadro::OUEST ? "OUEST" : "SUD";
                     $output .= "[{$couleur} {$direction}] ";
                 }
             }
@@ -249,4 +250,5 @@ class PlateauSquadro
 
         return $output;
     }
+
 }
