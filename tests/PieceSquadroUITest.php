@@ -56,7 +56,7 @@ class PieceSquadroUITest
 
         // Test 5 : Génération d'un formulaire
         echo "Test 5 - Génération d'un formulaire :\n";
-        $htmlForm = PieceSquadroUI::generateForm(6, 1);
+        $htmlForm = PieceSquadroUI::generationFormulaire(6, 1);
         echo $htmlForm . "\n\n";
         echo "<br>";
 
@@ -73,12 +73,12 @@ class PieceSquadroUITest
 
         // Test 6 : Génération du plateau de jeu pour le joueur blanc
         echo "Test 6 - Génération du plateau de jeu pour le joueur blanc :\n";
-        echo PieceSquadroUI::generatePlateau($plateau, PieceSquadro::BLANC) . "\n";
+        echo PieceSquadroUI::generationPlateauJeu($plateau, PieceSquadro::BLANC) . "\n";
         echo "<br>";
 
         // Test 7 : Génération du plateau de jeu pour le joueur noir
         echo "Test 7 - Génération du plateau de jeu pour le joueur noir :\n";
-        echo PieceSquadroUI::generatePlateau($plateau, PieceSquadro::NOIR) . "\n";
+        echo PieceSquadroUI::generationPlateauJeu($plateau, PieceSquadro::NOIR) . "\n";
         echo "<br>";
     }
 }

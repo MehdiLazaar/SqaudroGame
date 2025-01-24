@@ -50,7 +50,7 @@ class PieceSquadroUI {
      * @param int $y coordonnée y de la pièce.
      * @return string code HTML du formulaire.
      */
-    public static function generateForm(int $x, int $y): string
+    public static function generationFormulaire(int $x, int $y): string
     {
         return '<form action="#" method="POST">
                     <input type="hidden" name="x" value="' . $x . '">
@@ -65,7 +65,7 @@ class PieceSquadroUI {
      * @param int $joueurActif la couleur du joueur actif (BLANC ou NOIR).
      * @return string code HTML du plateau.
      */
-    public static function generatePlateau(PlateauSquadro $plateau, int $joueurActif): string
+    public static function generationPlateauJeu(PlateauSquadro $plateau, int $joueurActif): string
     {
         $html = '<div class="plateau">';
 
