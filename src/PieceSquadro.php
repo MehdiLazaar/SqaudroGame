@@ -60,7 +60,15 @@ class PieceSquadro {
 
     // Methode pour inverser la direction
     public function inverseDirection(): void {
-        $this->direction = ($this->direction + 2) % 4;
+        if ($this->direction === self::NORD) {
+            $this->direction = self::SUD;
+        } elseif ($this->direction === self::SUD) {
+            $this->direction = self::NORD;
+        } elseif ($this->direction === self::EST) {
+            $this->direction = self::OUEST;
+        } elseif ($this->direction === self::OUEST) {
+            $this->direction = self::EST;
+        }
     }
 
     // Convertion de l'objet en chaine de caractère

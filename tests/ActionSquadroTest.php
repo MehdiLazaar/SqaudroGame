@@ -13,11 +13,15 @@ class ActionSquadroTest extends TestCase
     private PlateauSquadro $plateau;
     private ActionSquadro $action;
 
-    protected function setUp(): void
+    public function setUp(): void
     {
         // Initialisation du plateau et de l'action
         $this->plateau = new PlateauSquadro();
         $this->action = new ActionSquadro($this->plateau);
+
+        // Initialisation de la session
+        session_start();
+        $_SESSION['joueurActif'] = PieceSquadro::BLANC; // Définissez le joueur actif (BLANC ou NOIR)
     }
 
     /**
@@ -28,7 +32,7 @@ class ActionSquadroTest extends TestCase
         // Vérifie qu'une pièce vide n'est pas jouable
         $this->assertFalse($this->action->estJouablePiece(0, 0));
 
-        // Vérifie qu'une pièce valide est jouable
+        // Vérifie qu'une pièce valide est jouable (ici on suppose que la pièce blanche est en (6, 1))
         $this->assertTrue($this->action->estJouablePiece(6, 1)); // Pièce blanche initiale
     }
 

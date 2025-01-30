@@ -32,12 +32,13 @@ class PlateauSquadro
         $this->plateau = array_fill(0, 7, array_fill(0, 7, PieceSquadro::initVide()));
     }
 
-    private function initCasesNeutres(): void
-    {
-        for ($x = 1; $x <= 5; $x++) {
-            for ($y = 1; $y <= 5; $y++) {
-                $this->plateau[$x][$y] = PieceSquadro::initNeutre();
-            }
+    private function initCasesNeutres(): void {
+        // Définir les coins comme cases neutres
+        $corners = [
+            [0, 0], [0, 6], [6, 0], [6, 6]
+        ];
+        foreach ($corners as $pos) {
+            $this->plateau[$pos[0]][$pos[1]] = PieceSquadro::initNeutre();
         }
     }
 
