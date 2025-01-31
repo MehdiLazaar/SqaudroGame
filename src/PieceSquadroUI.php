@@ -9,14 +9,20 @@ class PieceSquadroUI {
      * @return string code HTML de la case vide.
      */
     public static function generationCaseVide(int $x, int $y): string {
-        return '<button type="button" class="caseVide" value="' . $x . ',' . $y . '" ' . 'disabled' . '></button>';
+        return '<button type="button" 
+                    class="w-full h-full bg-gray-200 cursor-not-allowed" 
+                    value="' . $x . ',' . $y . '" disabled>
+            </button>';
     }
 
     /**
      * Génère une case neutre (non cliquable, sans coordonnées).
      */
     public static function generationCaseNeutre(): string {
-        return '<button type="button" class="caseNeutre" disabled></button>';
+        return '<button type="button" 
+                    class="w-full h-full bg-gray-800 cursor-not-allowed" 
+                    disabled>
+            </button>';
     }
     /**
      * Génère le code HTML d'une pièce.
@@ -29,10 +35,16 @@ class PieceSquadroUI {
      */
     public static function generationPiece(PieceSquadro $piece, int $x, int $y, bool $active = false): string {
         $couleur = $piece->getCouleur();
-        $class = 'piece' . ($couleur === PieceSquadro::BLANC ? 'Blanche' : 'Noir');
-        $disabled = $active ? '' : 'disabled';
+        $class = $couleur === PieceSquadro::BLANC ? 'bg-blue-500' : 'bg-black';
+        $disabled = $active ? '' : 'cursor-not-allowed opacity-50';
 
-        return '<button type="button" class="' . $class . '" value="' . $x . ',' . $y . '" ' . $disabled . '></button>';
+        return '<form action="deplacer.php" method="POST" class="w-full h-full">
+                <input type="hidden" name="x" value="' . $x . '">
+                <input type="hidden" name="y" value="' . $y . '">
+                <button type="submit" 
+                        class="w-full h-full ' . $class . ' ' . $disabled . '">
+                </button>
+            </form>';
     }
     /**
      * Génère le code HTML d'un formulaire pour envoyer les coordonnées de la pièce cliquée.
@@ -53,7 +65,8 @@ class PieceSquadroUI {
      * Génère le code HTML du plateau de jeu avec la disposition spécifique
      */
     public static function generationPlateauJeu(PlateauSquadro $plateau, int $joueurActif): string {
-        $html = '<table class="plateau">';
+        $html = '<div class="flex justify-center mt-5">
+                <table class="table-fixed border-collapse border border-gray-500">';
 
         for ($x = 0; $x < 7; $x++) {
             $html .= '<tr>';
@@ -61,48 +74,24 @@ class PieceSquadroUI {
                 $piece = $plateau->getPiece($x, $y);
                 $isCorner = ($x === 0 || $x === 6) && ($y === 0 || $y === 6);
 
+                $html .= '<td class="border border-gray-500 w-16 h-16 p-0 text-center">';
                 if ($isCorner) {
-                    // Cases neutres (toujours désactivées)
-                    $html .= '<td>' . self::generationCaseNeutre() . '</td>';
+                    $html .= self::generationCaseNeutre();
                 } else {
                     if ($piece === null) {
-                        // Cases vides : activées ou désactivées selon le joueur actif
-                        $isActive = self::isCaseVideActive($x, $y, $plateau, $joueurActif);
-                        $html .= '<td>' . self::generationCaseVide($x, $y, $isActive) . '</td>';
+                        $html .= self::generationCaseVide($x, $y);
                     } else {
-                        // Pièces : activées ou désactivées selon le joueur actif
                         $isActive = ($piece->getCouleur() === $joueurActif);
-                        $html .= '<td>' . self::generationPiece($piece, $x, $y, $isActive) . '</td>';
+                        $html .= self::generationPiece($piece, $x, $y, $isActive);
                     }
                 }
+                $html .= '</td>';
             }
             $html .= '</tr>';
         }
 
-        return $html . '</table>';
+        $html .= '</table></div>';
+        return $html;
     }
 
-    /**
-     * Détermine si une case vide est active en fonction du joueur actif.
-     */
-    private static function isCaseVideActive(int $x, int $y, PlateauSquadro $plateau, int $joueurActif): bool {
-        if ($joueurActif === PieceSquadro::BLANC) {
-            // Pour les blancs : vérifier s'il y a une pièce blanche à l'ouest
-            for ($i = $y - 1; $i >= 0; $i--) {
-                $piece = $plateau->getPiece($x, $i);
-                if ($piece !== null && $piece->getCouleur() === PieceSquadro::BLANC) {
-                    return true;
-                }
-            }
-        } else {
-            // Pour les noirs : vérifier s'il y a une pièce noire au sud
-            for ($i = $x + 1; $i < 7; $i++) {
-                $piece = $plateau->getPiece($i, $y);
-                if ($piece !== null && $piece->getCouleur() === PieceSquadro::NOIR) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 }

@@ -23,6 +23,4 @@ echo "<br>";
 $plateau = new PlateauSquadro();
 echo PieceSquadroUI::generationPlateauJeu($plateau, PieceSquadro::BLANC);
 
-echo "<br>";
-echo PieceSquadroUI::generationPlateauJeu($plateau, PieceSquadro::NOIR);
 ?>
