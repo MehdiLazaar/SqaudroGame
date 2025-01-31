@@ -1,180 +1,127 @@
 <?php
+
 namespace src;
 
-
-
 class SquadroUIGenerator {
-    private const COULEURS = [
-        PieceSquadro::BLANC => 'blanc',
-        PieceSquadro::NOIR => 'noir'
-    ];
 
     /**
-     * Génère le début du HTML pour la page
+     * Génère le début du HTML pour la page.
+     *
+     * @param string $title Le titre de la page.
+     * @return string Le HTML du début de la page.
      */
-    private static function getDebutHTML(string $title = "SquadroGame"): string {
+    public static function getDebutHTML(string $title = "SqaudroGame"): string {
         return '<!DOCTYPE html>
-            <html lang="fr">
-            <head>
-                <meta charset="UTF-8">
+                <html lang="fr">
+                <head>
+                <meta charset="utf-8" />
                 <title>'.$title.'</title>
-                <style>'.self::genererStyle().'</style>
-            </head>
-            <body>
-                <div class="container">
-                    <h1>'.$title.'</h1>';
+                <link rel="stylesheet" href="#" />
+                </head>
+                <div>
+                <div class="containerdeH1" <h1>'.$title.'</h1></div>
+                
+    ';
     }
-
     /**
-     * Génère la fin du HTML pour la page
+     * Génère la fin du HTML pour la page.
+     *
+     * @return string Le HTML de la fin de la page.
      */
-    private static function getFinHTML(): string {
-        return '</div></body></html>';
+    protected static function getFinHTML(): string {
+        return "</form></div></body>\n</html>";
     }
-
     /**
-     * Génère la page principale de jeu
+     * Génère une page pour proposer de jouer une pièce du joueur actif.
+     *
+     * @param PlateauSquadro $plateau Le plateau de jeu.
+     * @param int $joueurActif La couleur du joueur actif (BLANC ou NOIR).
+     * @return string Le HTML de la page.
      */
     public static function genererPageJouerPiece(PlateauSquadro $plateau, int $joueurActif): string {
-        $html = self::getDebutHTML("Tour des ".self::COULEURS[$joueurActif]);
+        $html = self::getDebutHTML("Jouer une pièce");
 
+        // Affiche le plateau de jeu
         $html .= '<div class="plateau">';
         $html .= PieceSquadroUI::generationPlateauJeu($plateau, $joueurActif);
         $html .= '</div>';
 
-        $html .= '<div class="status">';
-        $html .= '<p>Joueur actif : '.self::COULEURS[$joueurActif].'</p>';
-        $html .= '</div>';
+        // Affiche un message indiquant le joueur actif
+        $html .= '<p>C\'est au tour du joueur ' . ($joueurActif === PieceSquadro::BLANC ? 'blanc' : 'noir') . ' de jouer.</p>';
 
-        return $html.self::getFinHTML();
+        $html .= self::getFinHTML();
+        return $html;
     }
 
     /**
-     * Génère la page de confirmation de déplacement
+     * Génère une page pour confirmer le déplacement de la pièce choisie.
+     *
+     * @param PlateauSquadro $plateau Le plateau de jeu.
+     * @param int $x La coordonnée x de la pièce.
+     * @param int $y La coordonnée y de la pièce.
+     * @return string Le HTML de la page.
      */
-    public static function genererPageConfirmerDeplacement(
-        PlateauSquadro $plateau,
-        int $x,
-        int $y,
-        array $destination,
-        int $joueurActif
-    ): string {
-        $piece = $plateau->getPiece($x, $y);
-        if(!$piece) throw new \InvalidArgumentException("Pas de pièce à cette position");
+    public static function genererPageConfirmerDeplacement(PlateauSquadro $plateau, int $x, int $y): string {
+        $html = self::getDebutHTML("Confirmer le déplacement");
 
-        $html = self::getDebutHTML("Confirmation de déplacement");
-
-        $html .= '<div class="confirmation-box">';
-        $html .= '<h3>Déplacement proposé :</h3>';
-        $html .= '<p>De ('.$x.','.$y.') vers ('.$destination[0].','.$destination[1].')</p>';
-
-        $html .= '<div class="actions">';
-        $html .= self::genererFormulaireConfirmation($x, $y, $destination, $joueurActif);
-        $html .= self::genererBouton("Annuler", "index.php");
+        // Affiche le plateau de jeu
+        $html .= '<div class="plateau">';
+        $html .= PieceSquadroUI::generationPlateauJeu($plateau, $plateau->getPiece($x, $y)->getCouleur());
         $html .= '</div>';
 
-        return $html.self::getFinHTML();
+        // Affiche un message de confirmation
+        $html .= '<p>Confirmez-vous le déplacement de la pièce en (' . $x . ', ' . $y . ') ?</p>';
+
+        // Boutons de confirmation et d'annulation
+        $html .= '<form action="confirmer.php" method="POST">
+                    <input type="hidden" name="x" value="' . $x . '">
+                    <input type="hidden" name="y" value="' . $y . '">
+                    <button type="submit" name="confirmer" value="oui">Oui</button>
+                    <button type="submit" name="confirmer" value="non">Non</button>
+                  </form>';
+
+        $html .= self::getFinHTML();
+        return $html;
     }
 
     /**
-     * Génère la page de victoire
+     * Génère une page pour afficher le plateau final et le message de victoire.
+     *
+     * @param PlateauSquadro $plateau Le plateau de jeu.
+     * @param int $joueurGagnant La couleur du joueur gagnant (BLANC ou NOIR).
+     * @return string Le HTML de la page.
      */
     public static function genererPageVictoire(PlateauSquadro $plateau, int $joueurGagnant): string {
-        $html = self::getDebutHTML("Victoire des ".self::COULEURS[$joueurGagnant]);
+        $html = self::getDebutHTML("Victoire !");
 
-        $html .= '<div class="victoire">';
-        $html .= '<h2>Les '.self::COULEURS[$joueurGagnant].' remportent la partie !</h2>';
-        $html .= '<div class="plateau-final">';
+        // Affiche le plateau de jeu
+        $html .= '<div class="plateau">';
         $html .= PieceSquadroUI::generationPlateauJeu($plateau, $joueurGagnant);
         $html .= '</div>';
-        $html .= self::genererBouton("Rejouer", "nouvelle_partie.php");
-        $html .= '</div>';
 
-        return $html.self::getFinHTML();
+        // Affiche le message de victoire
+        $html .= '<p>Le joueur ' . ($joueurGagnant === PieceSquadro::BLANC ? 'blanc' : 'noir') . ' a gagné !</p>';
+
+        // Bouton pour recommencer une nouvelle partie
+        $html .= '<form action="index.php" method="POST">
+                    <button type="submit">Rejouer</button>
+                  </form>';
+
+        $html .= self::getFinHTML();
+        return $html;
     }
 
     /**
-     * Génère un formulaire de confirmation
-     */
-    private static function genererFormulaireConfirmation(
-        int $x,
-        int $y,
-        array $destination,
-        int $joueurActif
-    ): string {
-        return '<form method="POST" action="confirmer.php">
-            <input type="hidden" name="x" value="'.$x.'">
-            <input type="hidden" name="y" value="'.$y.'">
-            <input type="hidden" name="dest_x" value="'.$destination[0].'">
-            <input type="hidden" name="dest_y" value="'.$destination[1].'">
-            <input type="hidden" name="joueur" value="'.$joueurActif.'">
-            <button type="submit" class="btn-confirm">Confirmer</button>
-        </form>';
-    }
-
-    /**
-     * Génère un bouton stylisé
+     * Génère un composant HTML pour un bouton.
+     *
+     * @param string $texte Le texte du bouton.
+     * @param string $action L'action du bouton (URL ou script).
+     * @return string Le HTML du bouton.
      */
     public static function genererBouton(string $texte, string $action): string {
-        return '<a href="'.$action.'" class="btn">'.$texte.'</a>';
+        return '<form action="' . $action . '" method="POST">
+                    <button type="submit">' . $texte . '</button>
+                </form>';
     }
 
-    /**
-     * Génère les styles CSS
-     */
-    private static function genererStyle(): string {
-        return '
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 0;
-            padding: 20px;
-            background-color: #f0f0f0;
-        }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-        }
-        
-        .plateau {
-            margin: 20px 0;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 10px;
-            background: #3498db;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background 0.3s;
-        }
-        
-        .btn:hover {
-            background: #2980b9;
-        }
-        
-        .confirmation-box {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-        
-        .actions {
-            margin-top: 15px;
-            text-align: center;
-        }
-        ';
-    }
 }

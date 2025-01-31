@@ -1,40 +1,42 @@
 <?php
 
-// Autoloading ou inclusion manuelle des fichiers nécessaires
-
-
-require_once '../src/PlateauSquadro.php'; // Assurez-vous d'avoir inclus la classe PlateauSquadro
-require_once '../src/PieceSquadroUI.php'; // Inclure la classe PieceSquadroUI si nécessaire
-require_once '../src/SquadroUIGenerator.php'; // Inclure la classe SquadroUIGenerator
+// Inclure les fichiers nécessaires avec le bon chemin relatif
+require_once __DIR__ . '/../src/PieceSquadro.php';
+require_once __DIR__ . '/../src/PlateauSquadro.php';
+require_once __DIR__ . '/../src/PieceSquadroUI.php';
+require_once __DIR__ . '/../src/SquadroUIGenerator.php';
 
 use src\PieceSquadro;
 use src\PlateauSquadro;
 use src\SquadroUIGenerator;
 
-// Création d'un plateau fictif pour les tests
-$plateau = new PlateauSquadro(); // Initialiser un objet PlateauSquadro fictif (à adapter à votre code)
+// Démarrer la session
+session_start();
 
-// Simuler un joueur actif
-$joueurActif = PieceSquadro::BLANC; // Par exemple, on simule que le joueur actif est le joueur blanc
+// Initialiser le plateau et le joueur actif si la session est vide
+if (!isset($_SESSION['plateau'])) {
+    $_SESSION['plateau'] = new PlateauSquadro();
+    $_SESSION['joueurActif'] = PieceSquadro::BLANC; // Le joueur blanc commence
+}
 
-// Test de la méthode générant la page de jeu pour jouer une pièce
-echo "Test - Page Jouer une pièce :<br>";
+$plateau = $_SESSION['plateau'];
+$joueurActif = $_SESSION['joueurActif'];
+
+// Vérifier si une pièce a été sélectionnée
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['x']) && isset($_POST['y'])) {
+    $x = (int)$_POST['x'];
+    $y = (int)$_POST['y'];
+
+    // Afficher les informations de la pièce sélectionnée
+    echo "Pièce sélectionnée : ($x, $y)<br>";
+
+    // Stocker les coordonnées de la pièce sélectionnée dans la session
+    $_SESSION['pieceSelectionnee'] = ['x' => $x, 'y' => $y];
+
+    // Rediriger vers la page de confirmation
+    header("Location: confirmer_deplacement.php");
+    exit();
+}
+
+// Afficher la page pour sélectionner une pièce
 echo SquadroUIGenerator::genererPageJouerPiece($plateau, $joueurActif);
-
-// Test de la méthode générant la page de confirmation du déplacement
-$x = 2; // Coordonnée x d'exemple
-$y = 3; // Coordonnée y d'exemple
-echo "<br><br>Test - Page Confirmer Déplacement :<br>";
-echo SquadroUIGenerator::genererPageConfirmerDeplacement($plateau, $x, $y);
-
-// Test de la méthode générant la page de victoire
-$joueurGagnant = PieceSquadro::NOIR; // Par exemple, on simule que le joueur noir a gagné
-echo "<br><br>Test - Page Victoire :<br>";
-echo SquadroUIGenerator::genererPageVictoire($plateau, $joueurGagnant);
-
-// Test de la génération d'un bouton
-$texteBouton = "Rejouer";
-$action = "index.php";
-echo "<br><br>Test - Générer Bouton :<br>";
-echo SquadroUIGenerator::genererBouton($texteBouton, $action);
-?>
