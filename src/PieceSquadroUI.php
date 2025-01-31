@@ -10,7 +10,7 @@ class PieceSquadroUI {
      */
     public static function generationCaseVide(int $x, int $y): string {
         return '<button type="button" 
-                    class="w-full h-full bg-gray-200 cursor-not-allowed" 
+                    class="w-full h-full bg-gray-200 cursor-not-allowed rounded-md" 
                     value="' . $x . ',' . $y . '" disabled>
             </button>';
     }
@@ -20,29 +20,22 @@ class PieceSquadroUI {
      */
     public static function generationCaseNeutre(): string {
         return '<button type="button" 
-                    class="w-full h-full bg-gray-800 cursor-not-allowed" 
+                    class="w-full h-full bg-gray-800 cursor-not-allowed rounded-md" 
                     disabled>
             </button>';
     }
-    /**
-     * Génère le code HTML d'une pièce.
-     *
-     * @param PieceSquadro $piece la pièce à afficher.
-     * @param int $x coordonnée x de la pièce.
-     * @param int $y coordonnée y de la pièce.
-     * @param bool $isActive indique si la pièce est cliquable (joueur actif).
-     * @return string Code HTML de la pièce.
-     */
     public static function generationPiece(PieceSquadro $piece, int $x, int $y, bool $active = false): string {
         $couleur = $piece->getCouleur();
-        $class = $couleur === PieceSquadro::BLANC ? 'bg-blue-500' : 'bg-black';
-        $disabled = $active ? '' : 'cursor-not-allowed opacity-50';
+        $classCouleur = $couleur === PieceSquadro::BLANC ? 'bg-blue-500' : 'bg-black';
+        $classActive = $active ? '' : 'cursor-not-allowed opacity-50';
+        $classComplet = $classCouleur . ' ' . $classActive . ' rounded-md';
 
-        return '<form action="deplacer.php" method="POST" class="w-full h-full">
+        return '<form action="" method="POST" class="w-full h-full">
                 <input type="hidden" name="x" value="' . $x . '">
                 <input type="hidden" name="y" value="' . $y . '">
                 <button type="submit" 
-                        class="w-full h-full ' . $class . ' ' . $disabled . '">
+                        class="piece ' . $classComplet . '"
+                        aria-label="Déplacer pièce en position (' . $x . ', ' . $y . ')">
                 </button>
             </form>';
     }
@@ -55,7 +48,7 @@ class PieceSquadroUI {
      */
     public static function generationFormulaire(int $x, int $y): string
     {
-        return '<form action="deplacer.php" method="POST">
+        return '<form action="#" method="POST">
                     <input type="hidden" name="x" value="' . $x . '">
                     <input type="hidden" name="y" value="' . $y . '">
                     <button type="submit" class="piece">Déplacer</button>
@@ -66,32 +59,37 @@ class PieceSquadroUI {
      */
     public static function generationPlateauJeu(PlateauSquadro $plateau, int $joueurActif): string {
         $html = '<div class="flex justify-center mt-5">
-                <table class="table-fixed border-collapse border border-gray-500">';
+            <table class="table-fixed border-collapse border border-gray-500">';
 
+        // Boucle sur les lignes du plateau (x)
         for ($x = 0; $x < 7; $x++) {
-            $html .= '<tr>';
+            $html .= '<tr>'; // Début de la ligne
+
+            // Boucle sur les colonnes du plateau (y)
             for ($y = 0; $y < 7; $y++) {
                 $piece = $plateau->getPiece($x, $y);
                 $isCorner = ($x === 0 || $x === 6) && ($y === 0 || $y === 6);
 
-                $html .= '<td class="border border-gray-500 w-16 h-16 p-0 text-center">';
+                $html .= '<td class="border border-gray-500 w-16 h-16 p-0 text-center">'; // Début de la cellule
+
                 if ($isCorner) {
-                    $html .= self::generationCaseNeutre();
+                    $html .= self::generationCaseNeutre(); // Case neutre
                 } else {
                     if ($piece === null) {
-                        $html .= self::generationCaseVide($x, $y);
+                        $html .= self::generationCaseVide($x, $y); // Case vide
                     } else {
                         $isActive = ($piece->getCouleur() === $joueurActif);
-                        $html .= self::generationPiece($piece, $x, $y, $isActive);
+                        $html .= self::generationPiece($piece, $x, $y, $isActive); // Pièce
                     }
                 }
-                $html .= '</td>';
+
+                $html .= '</td>'; // Fin de la cellule
             }
-            $html .= '</tr>';
+
+            $html .= '</tr>'; // Fin de la ligne
         }
 
-        $html .= '</table></div>';
+        $html .= '</table></div>'; // Fin du tableau et du conteneur
         return $html;
     }
-
 }

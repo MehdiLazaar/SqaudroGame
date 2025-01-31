@@ -22,7 +22,7 @@ class ActionSquadro {
         $piece = $this->plateau->getPiece($x, $y);
 
         // Vérifie si la case contient une pièce valide
-        if ($piece === null || $piece->getCouleur() === PieceSquadro::VIDE) {
+        if ($piece === null || $piece->getCouleur() === PieceSquadro::VIDE || $piece->getCouleur() === PieceSquadro::NEUTRE) {
             return false;
         }
 
@@ -63,21 +63,64 @@ class ActionSquadro {
     }
 
     /**
+     * Renvoie les pièces sautées par le déplacement au début de leur parcours.
+     * @param int $xOrigine La position originale en x.
+     * @param int $yOrigine La position originale en y.
+     * @param int $xDestination La position de destination en x.
+     * @param int $yDestination La position de destination en y.
+     */
+    private function reculePieces(int $xOrigine, int $yOrigine, int $xDestination, int $yDestination): void {
+        $direction = $this->plateau->getPiece($xDestination, $yDestination)->getDirection();
+
+        // Détermine les positions intermédiaires entre l'origine et la destination
+        $rangeX = range(min($xOrigine, $xDestination), max($xOrigine, $xDestination));
+        $rangeY = range(min($yOrigine, $yDestination), max($yOrigine, $yDestination));
+
+        foreach ($rangeX as $x) {
+            foreach ($rangeY as $y) {
+                if (!($x == $xOrigine && $y == $yOrigine) && !($x == $xDestination && $y == $yDestination)) {
+                    $piece = $this->plateau->getPiece($x, $y);
+                    if ($piece !== null && $piece->getCouleur() !== PieceSquadro::VIDE && $piece->getCouleur() !== PieceSquadro::NEUTRE) {
+                        $this->reculePiece($x, $y, $direction);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Renvoie une pièce au début de son parcours.
      * @param int $x La position de la pièce en x.
      * @param int $y La position de la pièce en y.
+     * @param int $direction La direction initiale de la pièce.
      */
-    public function reculePiece(int $x, int $y): void {
+    private function reculePiece(int $x, int $y, int $direction): void {
         $piece = $this->plateau->getPiece($x, $y);
         if ($piece === null) {
             throw new Exception("Aucune pièce à reculer à la position ($x, $y).");
         }
 
-        $direction = $piece->getDirection();
+        $newX = $x;
+        $newY = $y;
 
-        // Réinitialise la position de la pièce selon sa direction initiale
-        $newX = ($direction === PieceSquadro::NORD) ? 0 : (($direction === PieceSquadro::SUD) ? 5 : $x);
-        $newY = ($direction === PieceSquadro::OUEST) ? 0 : (($direction === PieceSquadro::EST) ? 5 : $y);
+        switch ($direction) {
+            case PieceSquadro::NORD:
+                $newX = 1;
+                $newY = $y;
+                break;
+            case PieceSquadro::SUD:
+                $newX = 6;
+                $newY = $y;
+                break;
+            case PieceSquadro::EST:
+                $newX = $x;
+                $newY = 0;
+                break;
+            case PieceSquadro::OUEST:
+                $newX = $x;
+                $newY = 6;
+                break;
+        }
 
         // Déplace la pièce à son point de départ
         $this->plateau->setPiece(PieceSquadro::initVide(), $x, $y);
@@ -87,10 +130,15 @@ class ActionSquadro {
     /**
      * Retire une pièce du plateau lorsqu'elle a terminé son aller-retour.
      * @param int $couleur La couleur de la pièce.
-     * @param int $rang Le rang ou l'identifiant de la pièce.
+     * @param int $direction La direction de la pièce.
      */
-    public function sortPiece(int $couleur, int $rang): void {
-        echo "La pièce de couleur {$couleur} et de rang {$rang} est retirée du plateau.";
+    public function sortPiece(int $couleur, int $direction): void {
+        echo "La pièce de couleur {$couleur} et de direction {$direction} est retirée du plateau.";
+        if ($couleur === PieceSquadro::BLANC) {
+            $this->plateau->retireColonneJouable($direction);
+        } elseif ($couleur === PieceSquadro::NOIR) {
+            $this->plateau->retireLigneJouable($direction);
+        }
     }
 
     /**

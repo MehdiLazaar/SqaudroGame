@@ -14,14 +14,14 @@ class SquadroUIGenerator {
         return '<!DOCTYPE html>
                 <html lang="fr">
                 <head>
-                <meta charset="utf-8" />
-                <title>'.$title.'</title>
-                <link rel="stylesheet" href="#" />
+                    <meta charset="utf-8" />
+                    <title>' . htmlspecialchars($title) . '</title>
+                    <link rel="stylesheet" href="path/to/tailwind.css" /> <!-- Assurez-vous que ce lien est correct -->
                 </head>
-                <div>
-                <div class="containerdeH1" <h1>'.$title.'</h1></div>
-                
-    ';
+                <body>
+                    <div class="container">
+                        <h1>' . htmlspecialchars($title) . '</h1>
+        ';
     }
     /**
      * Génère la fin du HTML pour la page.
@@ -29,7 +29,7 @@ class SquadroUIGenerator {
      * @return string Le HTML de la fin de la page.
      */
     protected static function getFinHTML(): string {
-        return "</form></div></body>\n</html>";
+        return "</div></body>\n</html>";
     }
     /**
      * Génère une page pour proposer de jouer une pièce du joueur actif.
@@ -63,23 +63,25 @@ class SquadroUIGenerator {
      */
     public static function genererPageConfirmerDeplacement(PlateauSquadro $plateau, int $x, int $y): string {
         $html = self::getDebutHTML("Confirmer le déplacement");
-
         // Affiche le plateau de jeu
         $html .= '<div class="plateau">';
         $html .= PieceSquadroUI::generationPlateauJeu($plateau, $plateau->getPiece($x, $y)->getCouleur());
         $html .= '</div>';
-
         // Affiche un message de confirmation
         $html .= '<p>Confirmez-vous le déplacement de la pièce en (' . $x . ', ' . $y . ') ?</p>';
-
         // Boutons de confirmation et d'annulation
-        $html .= '<form action="confirmer.php" method="POST">
-                    <input type="hidden" name="x" value="' . $x . '">
-                    <input type="hidden" name="y" value="' . $y . '">
-                    <button type="submit" name="confirmer" value="oui">Oui</button>
-                    <button type="submit" name="confirmer" value="non">Non</button>
-                  </form>';
-
+        $html .= '<form action="" method="POST">
+                <input type="hidden" name="x" value="' . $x . '">
+                <input type="hidden" name="y" value="' . $y . '">
+                <input type="hidden" name="confirmer" value="oui">
+                <button type="submit">Oui</button>
+              </form>
+              <form action="" method="POST">
+                <input type="hidden" name="x" value="' . $x . '">
+                <input type="hidden" name="y" value="' . $y . '">
+                <input type="hidden" name="confirmer" value="non">
+                <button type="submit">Non</button>
+              </form>';
         $html .= self::getFinHTML();
         return $html;
     }
@@ -103,7 +105,7 @@ class SquadroUIGenerator {
         $html .= '<p>Le joueur ' . ($joueurGagnant === PieceSquadro::BLANC ? 'blanc' : 'noir') . ' a gagné !</p>';
 
         // Bouton pour recommencer une nouvelle partie
-        $html .= '<form action="index.php" method="POST">
+        $html .= '<form action="#" method="POST">
                     <button type="submit">Rejouer</button>
                   </form>';
 

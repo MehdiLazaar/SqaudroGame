@@ -1,26 +1,47 @@
 <?php
 
-require_once '../src/PieceSquadro.php';
-require_once '../src/PlateauSquadro.php';
-require_once '../src/PieceSquadroUI.php';
+
+// Inclure les fichiers nécessaires avec le bon chemin relatif
+require_once __DIR__ . '/../src/PieceSquadro.php';
+require_once __DIR__ . '/../src/PlateauSquadro.php';
+require_once __DIR__ . '/../src/PieceSquadroUI.php';
 
 use src\PieceSquadro;
-use src\PieceSquadroUI;
 use src\PlateauSquadro;
+use src\PieceSquadroUI;
 
-// Test 1 : Génération d'une pièce blanche active
-$pieceBlanche = PieceSquadro::initBlancOuest();
-echo PieceSquadroUI::generationPiece($pieceBlanche, 1, 0, true);
-echo "<br>";
-
-// Test 2 : Génération d'une case vide inactive
-echo PieceSquadroUI::generationCaseVide(2, 3, false);
-echo "<br>";
-// Test 3 : Génération d'une case neutre
-echo PieceSquadroUI::generationCaseNeutre();
-echo "<br>";
-// Test 4 : Génération du plateau complet (joueur blanc)
+// Initialiser un plateau de jeu simple pour le test
 $plateau = new PlateauSquadro();
-echo PieceSquadroUI::generationPlateauJeu($plateau, PieceSquadro::BLANC);
 
-?>
+// Définir une pièce blanche en position (1, 0)
+$plateau->setPiece(PieceSquadro::initBlancOuest(), 1, 0);
+
+// Définir une pièce noire en position (6, 1)
+$plateau->setPiece(PieceSquadro::initNoirSud(), 6, 1);
+
+// Définir une pièce vide en position (3, 3)
+$plateau->setPiece(PieceSquadro::initVide(), 3, 3);
+
+// Définir une case neutre en position (0, 0) - déjà fait par le constructeur
+
+// Définir le joueur actif (par exemple, blanc)
+$joueurActif = PieceSquadro::BLANC;
+
+// Générer le plateau de jeu
+$plateauHtml = PieceSquadroUI::generationPlateauJeu($plateau, $joueurActif);
+
+// Afficher le HTML généré
+echo '<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <title>Test PieceSquadroUI</title>
+    <link rel="stylesheet" href="path/to/tailwind.css" /> <!-- Assurez-vous que ce lien est correct -->
+</head>
+<body>
+    <div class="container">
+        <h1>Test de PieceSquadroUI</h1>
+        ' . $plateauHtml . '
+    </div>
+</body>
+</html>';
