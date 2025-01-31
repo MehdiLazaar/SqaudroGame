@@ -22,4 +22,7 @@ echo "<br>";
 // Test 4 : Génération du plateau complet (joueur blanc)
 $plateau = new PlateauSquadro();
 echo PieceSquadroUI::generationPlateauJeu($plateau, PieceSquadro::BLANC);
+
+echo "<br>";
+echo PieceSquadroUI::generationPlateauJeu($plateau, PieceSquadro::NOIR);
 ?>

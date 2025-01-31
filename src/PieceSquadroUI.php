@@ -8,9 +8,8 @@ class PieceSquadroUI {
      *
      * @return string code HTML de la case vide.
      */
-    public static function generationCaseVide(int $x, int $y, bool $isActive = true): string {
-        $disabled = $isActive ? '' : 'disabled';
-        return '<button type="button" class="caseVide" value="' . $x . ',' . $y . '" ' . $disabled . '></button>';
+    public static function generationCaseVide(int $x, int $y): string {
+        return '<button type="button" class="caseVide" value="' . $x . ',' . $y . '" ' . 'disabled' . '></button>';
     }
 
     /**
