@@ -110,56 +110,6 @@ class PlateauSquadro
     }
 
     // Méthodes pour calculer les destinations des pièces
-    /*public function getCoordDestination(int $x, int $y): array {
-        $piece = $this->getPiece($x, $y);
-
-        if ($piece === null || $piece->getCouleur() === PieceSquadro::VIDE || $piece->getCouleur() === PieceSquadro::NEUTRE) {
-            throw new InvalidArgumentException("Aucune pièce valide à la position ($x, $y).");
-        }
-
-        $couleur = $piece->getCouleur();
-        $direction = $piece->getDirection();
-        $vitesse = 0;
-
-        // Calcul de la vitesse en fonction de la couleur et de la direction
-        if ($couleur === PieceSquadro::BLANC) {
-            if ($direction === PieceSquadro::EST) {
-                $vitesse = self::BLANC_V_ALLER[$y];
-            } elseif ($direction === PieceSquadro::OUEST) {
-                $vitesse = self::BLANC_V_RETOUR[$y];
-            }
-        } elseif ($couleur === PieceSquadro::NOIR) {
-            if ($direction === PieceSquadro::NORD) {
-                $vitesse = self::NOIR_V_ALLER[$x];
-            } elseif ($direction === PieceSquadro::SUD) {
-                $vitesse = self::NOIR_V_RETOUR[$x];
-            }
-        }
-
-        // Calcul des nouvelles coordonnées
-        switch ($direction) {
-            case PieceSquadro::NORD:
-                $newX = max(0, $x - $vitesse);
-                $newY = $y;
-                break;
-            case PieceSquadro::SUD:
-                $newX = min(6, $x + $vitesse);
-                $newY = $y;
-                break;
-            case PieceSquadro::EST:
-                $newX = $x;
-                $newY = min(6, $y + $vitesse);
-                break;
-            case PieceSquadro::OUEST:
-                $newX = $x;
-                $newY = max(0, $y - $vitesse);
-                break;
-            default:
-                throw new InvalidArgumentException("Direction invalide pour la pièce à ($x, $y).");
-        }
-
-        return [$newX, $newY];
-    }*/
     public function getCoordDestination(int $x, int $y): array
     {
         $piece = $this->getPiece($x, $y);

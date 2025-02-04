@@ -57,37 +57,6 @@ class PieceSquadroUI {
     /**
      * Génère le code HTML du plateau de jeu avec la disposition spécifique
      */
-    /*public static function generationPlateauJeu(PlateauSquadro $plateau, int $joueurActif): string {
-        $html = '<div class="flex justify-center mt-5">
-            <table class="table-fixed border-collapse border border-gray-500">';
-        for ($x = 0; $x < 7; $x++) {
-            $html .= '<tr>';
-            for ($y = 0; $y < 7; $y++) {
-                $piece = $plateau->getPiece($x, $y);
-                $isCorner = ($x === 0 || $x === 6) && ($y === 0 || $y === 6);
-
-                $html .= '<td class="border border-gray-500 w-16 h-16 p-0 text-center">';
-
-                if ($isCorner) {
-                    $html .= self::generationCaseNeutre();
-                } else {
-                    if ($piece === null) {
-                        $html .= self::generationCaseVide($x, $y);
-                    } else {
-                        $isActive = ($piece->getCouleur() === $joueurActif);
-                        $html .= self::generationPiece($piece, $x, $y, $isActive);
-                    }
-                }
-
-                $html .= '</td>';
-            }
-
-            $html .= '</tr>';
-        }
-
-        $html .= '</table></div>';
-        return $html;
-    }*/
     public static function generationPlateauJeu(PlateauSquadro $plateau, int $joueurActif): string
     {
         $html = '<div class="flex justify-center mt-5">

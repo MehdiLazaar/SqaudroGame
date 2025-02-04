@@ -75,7 +75,7 @@ class SquadroUIGenerator {
               </form>';
 
         // Formulaire pour "Non"
-        $html .= '<form action="ConfirmerChoix.php" method="POST">
+        $html .= '<form action="AnnulerChoix.php" method="POST">
                 <input type="hidden" name="confirmer" value="non">
                 <button type="submit">Non</button>
               </form>';
@@ -110,18 +110,4 @@ class SquadroUIGenerator {
         $html .= self::getFinHTML();
         return $html;
     }
-
-    /**
-     * Génère un composant HTML pour un bouton.
-     *
-     * @param string $texte Le texte du bouton.
-     * @param string $action L'action du bouton (URL ou script).
-     * @return string Le HTML du bouton.
-     */
-    public static function genererBouton(string $texte, string $action): string {
-        return '<form action="' . $action . '" method="POST">
-                    <button type="submit">' . $texte . '</button>
-                </form>';
-    }
-
 }

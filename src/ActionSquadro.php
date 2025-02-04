@@ -52,52 +52,6 @@ class ActionSquadro
      * @param int $y La position de départ en y.
      * @param int $joueurActif La couleur du joueur actif.
      */
-    /*public function jouerPiece(int $x, int $y, int $joueurActif): void
-    {
-        if ($this->partieTerminee) {
-            return; // Empêcher les mouvements après la victoire
-        }
-
-        $piece = $this->plateau->getPiece($x, $y);
-
-        if ($piece === null || $piece->getCouleur() !== $joueurActif) {
-            throw new InvalidArgumentException("Cette pièce ne vous appartient pas ou n'est pas valide !");
-        }
-
-        [$newX, $newY] = $this->plateau->getCoordDestination($x, $y);
-
-        if ($newX < 0 || $newX >= 7 || $newY < 0 || $newY >= 7) {
-            throw new OutOfBoundsException("Mouvement hors limites !");
-        }
-
-        // Gérer les collisions sur le trajet
-        $this->gererCollisionsSurTrajet($x, $y, $newX, $newY, $piece);
-
-        // Gérer les collisions multiples
-        $this->gererCollisionsMultiples($newX, $newY, $piece);
-
-        // Mettre à jour l'historique des positions
-        $this->historiquePositions["$newX-$newY"][] = ["x" => $x, "y" => $y];
-
-        // Déplacer la pièce
-        $this->plateau->setPiece(PieceSquadro::initVide(), $x, $y);
-        $this->plateau->setPiece($piece, $newX, $newY);
-
-        // Inverser la direction si nécessaire
-        if ($this->aAtteintZoneRetournement($newX, $newY, $piece)) {
-            $piece->inverseDirection();
-        }
-
-        // Retirer la pièce si elle a terminé son aller-retour
-        if ($this->aTermineAllerRetour($newX, $newY)) {
-            $this->sortirPiece($piece->getCouleur(), $newX, $newY);
-        }
-
-        // Vérification de victoire après chaque coup
-        if ($this->remporteVictoire()) {
-            $this->afficherMessageVictoire();
-        }
-    }*/
     public function jouerPiece(int $x, int $y, int $joueurActif): void
     {
         if ($this->partieTerminee) {
@@ -188,23 +142,6 @@ class ActionSquadro
      * @param int $y La position en y.
      * @param PieceSquadro $pieceAdverse La pièce adverse.
      */
-    /*private function gererReculPieceAdverse(int $x, int $y, PieceSquadro $pieceAdverse): void
-    {
-        if ($this->aDejaEffectueAller($pieceAdverse)) {
-            if ($pieceAdverse->getCouleur() === PieceSquadro::BLANC) {
-                $this->plateau->setPiece($pieceAdverse, $x, 6);
-            } else {
-                $this->plateau->setPiece($pieceAdverse, 0, $y);
-            }
-        } else {
-            if ($pieceAdverse->getCouleur() === PieceSquadro::BLANC) {
-                $this->plateau->setPiece($pieceAdverse, $x, 0);
-            } else {
-                $this->plateau->setPiece($pieceAdverse, 6, $y);
-            }
-        }
-        $this->plateau->setPiece(PieceSquadro::initVide(), $x, $y);
-    }*/
     private function gererReculPieceAdverse(int $x, int $y, PieceSquadro $pieceAdverse): void
     {
         $couleur = $pieceAdverse->getCouleur();
@@ -229,14 +166,6 @@ class ActionSquadro
      * @param int $y La position en y.
      * @param PieceSquadro $piece La pièce qui se déplace.
      */
-    /*private function gererCollisionsMultiples(int $x, int $y, PieceSquadro $piece): void
-    {
-        $pieceSurCase = $this->plateau->getPiece($x, $y);
-        if ($pieceSurCase !== null && $pieceSurCase->getCouleur() !== $piece->getCouleur()) {
-            $this->gererReculPieceAdverse($x, $y, $pieceSurCase);
-            $this->plateau->setPiece($piece, $x, $y);
-        }
-    }*/
     private function gererCollisionsMultiples(int $x, int $y, PieceSquadro $piece): void
     {
         $pieceSurCase = $this->plateau->getPiece($x, $y);

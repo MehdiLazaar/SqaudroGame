@@ -10,9 +10,6 @@ class ArrayPieceSquadro implements \ArrayAccess, \Countable {
     private array $pieces = [];
 
     // Constructeur
-    /*public function __construct(array $pieces = []) {
-        $this->pieces = $pieces;
-    }*/
     public function __construct(array $pieces = []) {
         foreach ($pieces as $piece) {
             if (!$piece instanceof PieceSquadro) {
@@ -37,13 +34,6 @@ class ArrayPieceSquadro implements \ArrayAccess, \Countable {
             throw new OutOfBoundsException("$index n'existe pas.");
         }
     }
-    /*public function __toString(): string {
-        $str = "";
-        foreach ($this->pieces as $piece) {
-            $str .= $piece . "\n";
-        }
-        return $str;
-    }*/
     public function __toString(): string {
         return implode("\n", array_map(fn($piece) => $piece->__toString(), $this->pieces));
     }
