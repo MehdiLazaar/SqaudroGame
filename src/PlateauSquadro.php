@@ -110,71 +110,109 @@ class PlateauSquadro
     }
 
     // Méthodes pour calculer les destinations des pièces
-    public function getCoordDestination(int $x, int $y): array
-    {
+    /*public function getCoordDestination(int $x, int $y): array {
         $piece = $this->getPiece($x, $y);
 
-        // Vérifie si la pièce est valide
         if ($piece === null || $piece->getCouleur() === PieceSquadro::VIDE || $piece->getCouleur() === PieceSquadro::NEUTRE) {
-            throw new InvalidArgumentException("Aucune pièce à déplacer à la case ({$x}, {$y})");
+            throw new InvalidArgumentException("Aucune pièce valide à la position ($x, $y).");
         }
 
-        // Détermine la vitesse en fonction de la couleur et de la direction
         $couleur = $piece->getCouleur();
         $direction = $piece->getDirection();
         $vitesse = 0;
 
+        // Calcul de la vitesse en fonction de la couleur et de la direction
         if ($couleur === PieceSquadro::BLANC) {
             if ($direction === PieceSquadro::EST) {
-                // Vérifie que $y est un indice valide pour BLANC_V_ALLER
-                if ($y < 0 || $y >= count(self::BLANC_V_ALLER)) {
-                    throw new InvalidArgumentException("Indice de colonne invalide pour les pièces blanches : {$y}");
-                }
-                $vitesse = self::BLANC_V_ALLER[$y]; // Vitesse à l'aller pour les pièces blanches
+                $vitesse = self::BLANC_V_ALLER[$y];
             } elseif ($direction === PieceSquadro::OUEST) {
-                // Vérifie que $y est un indice valide pour BLANC_V_RETOUR
-                if ($y < 0 || $y >= count(self::BLANC_V_RETOUR)) {
-                    throw new InvalidArgumentException("Indice de colonne invalide pour les pièces blanches : {$y}");
-                }
-                $vitesse = self::BLANC_V_RETOUR[$y]; // Vitesse au retour pour les pièces blanches
+                $vitesse = self::BLANC_V_RETOUR[$y];
             }
         } elseif ($couleur === PieceSquadro::NOIR) {
             if ($direction === PieceSquadro::NORD) {
-                // Vérifie que $x est un indice valide pour NOIR_V_ALLER
-                if ($x < 0 || $x >= count(self::NOIR_V_ALLER)) {
-                    throw new InvalidArgumentException("Indice de ligne invalide pour les pièces noires : {$x}");
-                }
-                $vitesse = self::NOIR_V_ALLER[$x]; // Vitesse à l'aller pour les pièces noires
+                $vitesse = self::NOIR_V_ALLER[$x];
             } elseif ($direction === PieceSquadro::SUD) {
-                // Vérifie que $x est un indice valide pour NOIR_V_RETOUR
-                if ($x < 0 || $x >= count(self::NOIR_V_RETOUR)) {
-                    throw new InvalidArgumentException("Indice de ligne invalide pour les pièces noires : {$x}");
-                }
-                $vitesse = self::NOIR_V_RETOUR[$x]; // Vitesse au retour pour les pièces noires
+                $vitesse = self::NOIR_V_RETOUR[$x];
             }
         }
 
-        // Si la vitesse est nulle, retourne les coordonnées d'origine
-        if ($vitesse === 0) {
-            return [$x, $y];
-        }
-
-        // Calcule les nouvelles coordonnées en fonction de la direction et de la vitesse
-        $newX = $x;
-        $newY = $y;
-
+        // Calcul des nouvelles coordonnées
         switch ($direction) {
-            case PieceSquadro::NORD: $newX -= $vitesse; break;
-            case PieceSquadro::SUD: $newX += $vitesse; break;
-            case PieceSquadro::EST: $newY += $vitesse; break;
-            case PieceSquadro::OUEST: $newY -= $vitesse; break;
+            case PieceSquadro::NORD:
+                $newX = max(0, $x - $vitesse);
+                $newY = $y;
+                break;
+            case PieceSquadro::SUD:
+                $newX = min(6, $x + $vitesse);
+                $newY = $y;
+                break;
+            case PieceSquadro::EST:
+                $newX = $x;
+                $newY = min(6, $y + $vitesse);
+                break;
+            case PieceSquadro::OUEST:
+                $newX = $x;
+                $newY = max(0, $y - $vitesse);
+                break;
+            default:
+                throw new InvalidArgumentException("Direction invalide pour la pièce à ($x, $y).");
         }
 
-        // Limite les coordonnées aux limites du plateau (0 à 6)
+        return [$newX, $newY];
+    }*/
+    public function getCoordDestination(int $x, int $y): array
+    {
+        $piece = $this->getPiece($x, $y);
+
+        if ($piece === null || $piece->getCouleur() === PieceSquadro::VIDE || $piece->getCouleur() === PieceSquadro::NEUTRE) {
+            throw new InvalidArgumentException("Aucune pièce valide à la position ($x, $y).");
+        }
+
+        $couleur = $piece->getCouleur();
+        $direction = $piece->getDirection();
+        $vitesse = 0;
+
+        // Calculer la vitesse selon la couleur et la direction
+        if ($couleur === PieceSquadro::BLANC) {
+            if ($direction === PieceSquadro::EST) {
+                $vitesse = self::BLANC_V_ALLER[$y];
+            } elseif ($direction === PieceSquadro::OUEST) {
+                $vitesse = self::BLANC_V_RETOUR[$y];
+            }
+        } elseif ($couleur === PieceSquadro::NOIR) {
+            if ($direction === PieceSquadro::NORD) {
+                $vitesse = self::NOIR_V_ALLER[$x];
+            } elseif ($direction === PieceSquadro::SUD) {
+                $vitesse = self::NOIR_V_RETOUR[$x];
+            }
+        }
+
+        // Calculer les nouvelles coordonnées
+        switch ($direction) {
+            case PieceSquadro::NORD:
+                $newX = max(0, $x - $vitesse);
+                $newY = $y;
+                break;
+            case PieceSquadro::SUD:
+                $newX = min(6, $x + $vitesse);
+                $newY = $y;
+                break;
+            case PieceSquadro::EST:
+                $newX = $x;
+                $newY = min(6, $y + $vitesse);
+                break;
+            case PieceSquadro::OUEST:
+                $newX = $x;
+                $newY = max(0, $y - $vitesse);
+                break;
+            default:
+                throw new InvalidArgumentException("Direction invalide pour la pièce à ($x, $y).");
+        }
+
+        // Limiter les coordonnées au plateau (0 à 6)
         $newX = max(0, min(6, $newX));
         $newY = max(0, min(6, $newY));
 
-        // Retourne les coordonnées
         return [$newX, $newY];
     }
 

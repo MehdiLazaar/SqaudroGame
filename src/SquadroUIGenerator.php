@@ -1,7 +1,7 @@
 <?php
 
 namespace src;
-
+use src\PieceSquadroUI;
 class SquadroUIGenerator {
 
     /**
@@ -28,7 +28,7 @@ class SquadroUIGenerator {
      *
      * @return string Le HTML de la fin de la page.
      */
-    protected static function getFinHTML(): string {
+    public static function getFinHTML(): string {
         return "</div></body>\n</html>";
     }
     /**
@@ -63,25 +63,23 @@ class SquadroUIGenerator {
      */
     public static function genererPageConfirmerDeplacement(PlateauSquadro $plateau, int $x, int $y): string {
         $html = self::getDebutHTML("Confirmer le déplacement");
-        // Affiche le plateau de jeu
         $html .= '<div class="plateau">';
         $html .= PieceSquadroUI::generationPlateauJeu($plateau, $plateau->getPiece($x, $y)->getCouleur());
         $html .= '</div>';
-        // Affiche un message de confirmation
         $html .= '<p>Confirmez-vous le déplacement de la pièce en (' . $x . ', ' . $y . ') ?</p>';
-        // Boutons de confirmation et d'annulation
-        $html .= '<form action="" method="POST">
-                <input type="hidden" name="x" value="' . $x . '">
-                <input type="hidden" name="y" value="' . $y . '">
+
+        // Formulaire pour "Oui"
+        $html .= '<form action="ConfirmerChoix.php" method="POST">
                 <input type="hidden" name="confirmer" value="oui">
                 <button type="submit">Oui</button>
-              </form>
-              <form action="" method="POST">
-                <input type="hidden" name="x" value="' . $x . '">
-                <input type="hidden" name="y" value="' . $y . '">
+              </form>';
+
+        // Formulaire pour "Non"
+        $html .= '<form action="ConfirmerChoix.php" method="POST">
                 <input type="hidden" name="confirmer" value="non">
                 <button type="submit">Non</button>
               </form>';
+
         $html .= self::getFinHTML();
         return $html;
     }

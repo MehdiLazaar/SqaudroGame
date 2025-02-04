@@ -73,7 +73,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-
 // Afficher la page pour sélectionner une pièce ou confirmer le déplacement
 if (isset($_SESSION['pieceSelectionnee'])) {
     $pieceSelectionnee = $_SESSION['pieceSelectionnee'];
