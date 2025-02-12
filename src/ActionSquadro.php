@@ -9,22 +9,23 @@ use src\PlateauSquadro;
 class ActionSquadro
 {
     private PlateauSquadro $plateau;
-    private int $countBlancSortie = 0;
-    private int $countNoirSortie = 0;
-    private bool $partieTerminee = false; // Flag pour bloquer le jeu après la victoire
-    private array $historiquePositions = [];
+    private bool $endgame = false;
+    private array $dernierePos = [];
 
     public function __construct(PlateauSquadro $plateau)
     {
         $this->plateau = $plateau;
+    }
+    public function getJoueur(): int
+    {
+        return $_SESSION['joueur'] ?? PieceSquadro::BLANC;
+    }
 
-        // Initialisation des compteurs dans la session avec des noms uniques
-        if (!isset($_SESSION['squadro_count_noir_sortie'])) {
-            $_SESSION['squadro_count_noir_sortie'] = $this->countNoirSortie;
-        }
-        if (!isset($_SESSION['squadro_count_blanc_sortie'])) {
-            $_SESSION['squadro_count_blanc_sortie'] = $this->countBlancSortie;
-        }
+    public function changerJoueur(): void
+    {
+        $_SESSION['joueur'] = ($_SESSION['joueur'] === PieceSquadro::BLANC)
+            ? PieceSquadro::NOIR
+            : PieceSquadro::BLANC;
     }
 
     /**
@@ -32,204 +33,154 @@ class ActionSquadro
      *
      * @param int $x La position en x.
      * @param int $y La position en y.
-     * @param int $joueurActif La couleur du joueur actif.
+     * @param int $joueur La couleur du joueur actif.
      * @return bool True si la pièce est jouable, false sinon.
      */
-    public function estJouablePiece(int $x, int $y, int $joueurActif): bool
+    public function estJouablePiece(int $x, int $y): bool
     {
-        if ($this->partieTerminee) {
-            return false; // Bloquer les mouvements si la partie est terminée
-        }
-
-        $piece = $this->plateau->getPiece($x, $y);
-        return $piece !== null && $piece->getCouleur() === $joueurActif && !$this->aTermineAllerRetour($x, $y);
+        $joueurEnCours = $this->getJoueur();
+        return !$this->endgame && $this->plateau->getPiece($x, $y)->getCouleur() === $joueurEnCours;
     }
-
     /**
      * Joue une pièce en déplaçant celle-ci et en appliquant les règles associées.
      *
      * @param int $x La position de départ en x.
      * @param int $y La position de départ en y.
-     * @param int $joueurActif La couleur du joueur actif.
      */
-    public function jouerPiece(int $x, int $y, int $joueurActif): void
-    {
-        if ($this->partieTerminee) {
-            echo "La partie est terminée. Aucun mouvement possible.";
-            return;
-        }
-
+    public function jouePiece(int $x, int $y): void{
+        if ($this->endgame) return;
+        //On recupere le joueur en question soit noir ou blanc
+        $joueur = $this->getJoueur();
+        //Recuperer la piece à la position initiale
         $piece = $this->plateau->getPiece($x, $y);
 
-        if ($piece === null || $piece->getCouleur() !== $joueurActif) {
-            throw new InvalidArgumentException("Cette pièce ne vous appartient pas ou n'est pas valide !");
+        // Verifier si la couleur de la piece correspond à celle du joueur en question
+        if ($piece->getCouleur() !== $joueur) {
+            throw new InvalidArgumentException("ce n'est pas votre piece !");
         }
-
-        // Calculer la destination
+        // Récupérer les nouvelles coordonnées de destination
         [$newX, $newY] = $this->plateau->getCoordDestination($x, $y);
-        echo "Déplacement de ($x, $y) vers ($newX, $newY)<br>";
 
-        if ($newX < 0 || $newX >= 7 || $newY < 0 || $newY >= 7) {
-            throw new OutOfBoundsException("Mouvement hors limites !");
+        if ($this->estHorsLimites($newX, $newY) || !$this->caseLibre($newX, $newY)) {
+            // Sortie si la destination est hors limites ou occupée
+            return;
         }
+        // Vérification des pièces traversées et application des règles de recul
+        $this->traiterCollisions($piece, $x, $y, $newX, $newY);
 
-        // Gérer les collisions sur le trajet
-        $this->gererCollisionsSurTrajet($x, $y, $newX, $newY, $piece);
-
-        // Gérer les collisions multiples
-        $this->gererCollisionsMultiples($newX, $newY, $piece);
-
-        // Rendre la case actuelle vide
-        $this->plateau->setPiece(PieceSquadro::initVide(), $x, $y);
-        echo "Case ($x, $y) rendue vide.<br>";
-
-        // Placer la pièce à sa nouvelle position
-        $this->plateau->setPiece($piece, $newX, $newY);
-        echo "Pièce déplacée à ($newX, $newY).<br>";
-
-        // Inverser la direction si nécessaire
-        if ($this->aAtteintZoneRetournement($newX, $newY, $piece)) {
+        $this->plateau->setPiece($piece,$newX, $newY);
+        $this->plateau->setPiece(PieceSquadro::initVide(),$x, $y);
+        //historique du deplacement
+        $this->dernierePos["$newX-$newY"][] = ["x" => $x, "y" => $y];
+        // Inversion de direction si la pièce atteint un bord opposé
+        if ($this->BordPlateauOuestEstNordSud($newX, $newY, $piece)) {
             $piece->inverseDirection();
-            echo "Direction inversée.<br>";
+        }
+        //On verifie si la piece a terminé son trajet et doit etre comptée comme sortie
+        if (($newX === 6 && $piece->getCouleur() === PieceSquadro::NOIR) ||
+            ($newY === 0 && $piece->getCouleur() === PieceSquadro::BLANC)) {
+            $this->sortPiece($piece->getCouleur(), ($piece->getCouleur() === PieceSquadro::BLANC) ? $x : $y);
         }
 
-        // Retirer la pièce si elle a terminé son aller-retour
-        if ($this->aTermineAllerRetour($newX, $newY)) {
-            $this->sortirPiece($piece->getCouleur(), $newX, $newY);
-            echo "Pièce retirée du plateau.<br>";
+        if ($this->remporteVictoire($piece->getCouleur())) {
+            $this->victoire();
         }
-
-        // Vérifier si une couleur a remporté la partie
-        if ($this->remporteVictoire()) {
-            $this->afficherMessageVictoire();
-        }
+        //On change le joueur du blanc vers noir et vice versa.
+        $this->chnagerJoueur();
     }
-
     /**
-     * Gère les collisions sur le trajet de la pièce.
      *
-     * @param int $x La position de départ en x.
-     * @param int $y La position de départ en y.
-     * @param int $newX La position finale en x.
-     * @param int $newY La position finale en y.
-     * @param PieceSquadro $piece La pièce qui se déplace.
+     * @param PieceSquadro $piece la piece en question
+     * @param integer $x La position en x de la pièce.
+     * @param integer $y La position en y de la pièce.
+     * @param integer $newX La nouvelle position en x de la pièce.
+     * @param integer $newY La nouvelle position en y de la pièce.
+     * @return void on ne retourne rien
+     * Fonction qui permet de verifier les collisions entre les pieces blanches et noires
      */
-    private function gererCollisionsSurTrajet(int $x, int $y, int $newX, int $newY, PieceSquadro $piece): void
-    {
-        $couleur = $piece->getCouleur();
+    private function traiterCollisions(PieceSquadro $piece, int $x, int $y, int $newX, int $newY): void {
+        // Détection des collisions sur la trajectoire
+        if ($piece->getCouleur() === PieceSquadro::BLANC) {
+            $start = min($y, $newY) + 1;
+            $end = max($y, $newY);
 
-        if ($couleur === PieceSquadro::BLANC) {
-            for ($col = min($y, $newY) + 1; $col <= max($y, $newY); $col++) {
-                $pieceAdverse = $this->plateau->getPiece($x, $col);
-                if ($pieceAdverse !== null && $pieceAdverse->getCouleur() === PieceSquadro::NOIR) {
-                    $this->gererReculPieceAdverse($x, $col, $pieceAdverse);
+            for ($i = $start; $i <= $end; $i++) {
+                $pieceSurCase = $this->plateau->getPiece($x, $i);
+                if ($pieceSurCase->getCouleur() === PieceSquadro::NOIR) {
+                    // Reculer la pièce noire
+                    $this->reculePiece($x, $i);
                 }
             }
-        } elseif ($couleur === PieceSquadro::NOIR) {
-            for ($row = min($x, $newX) + 1; $row <= max($x, $newX); $row++) {
-                $pieceAdverse = $this->plateau->getPiece($row, $y);
-                if ($pieceAdverse !== null && $pieceAdverse->getCouleur() === PieceSquadro::BLANC) {
-                    $this->gererReculPieceAdverse($row, $y, $pieceAdverse);
+        } elseif ($piece->getCouleur() === PieceSquadro::NOIR) {
+            $start = min($x, $newX) + 1;
+            $end = max($x, $newX);
+
+            for ($i = $start; $i <= $end; $i++) {
+                $pieceSurCase = $this->plateau->getPiece($i, $y);
+                if ($pieceSurCase->getCouleur() === PieceSquadro::BLANC) {
+                    // Reculer la pièce blanche
+                    $this->reculePiece($i, $y);
                 }
             }
         }
-    }
 
-    /**
-     * Gère le recul d'une pièce adverse.
-     *
-     * @param int $x La position en x.
-     * @param int $y La position en y.
-     * @param PieceSquadro $pieceAdverse La pièce adverse.
-     */
-    private function gererReculPieceAdverse(int $x, int $y, PieceSquadro $pieceAdverse): void
-    {
-        $couleur = $pieceAdverse->getCouleur();
-
-        // Calculer la nouvelle position pour la pièce adverse
-        if ($couleur === PieceSquadro::BLANC) {
-            $newY = $pieceAdverse->getDirection() === PieceSquadro::EST ? 0 : 6;
-            $this->plateau->setPiece($pieceAdverse, $x, $newY);
-        } elseif ($couleur === PieceSquadro::NOIR) {
-            $newX = $pieceAdverse->getDirection() === PieceSquadro::NORD ? 6 : 0;
-            $this->plateau->setPiece($pieceAdverse, $newX, $y);
-        }
-
-        // Rendre la case vide après le déplacement
-        $this->plateau->setPiece(PieceSquadro::initVide(), $x, $y);
-    }
-
-    /**
-     * Gère les collisions multiples sur la case cible.
-     *
-     * @param int $x La position en x.
-     * @param int $y La position en y.
-     * @param PieceSquadro $piece La pièce qui se déplace.
-     */
-    private function gererCollisionsMultiples(int $x, int $y, PieceSquadro $piece): void
-    {
-        $pieceSurCase = $this->plateau->getPiece($x, $y);
-        if ($pieceSurCase !== null && $pieceSurCase->getCouleur() !== $piece->getCouleur()) {
-            // Repousser la pièce adverse
-            $this->gererReculPieceAdverse($x, $y, $pieceSurCase);
+        // Vérification de la case de destination
+        $pieceSurCase = $this->plateau->getPiece($newX, $newY);
+        if ($pieceSurCase->getCouleur() !== PieceSquadro::VIDE && $pieceSurCase->getCouleur() !== $piece->getCouleur()) {
+            $this->reculePiece($newX, $newY);
         }
     }
-
-    /**
-     * Vérifie si la pièce a atteint la zone de retournement.
-     *
-     * @param int $x La position en x.
-     * @param int $y La position en y.
-     * @param PieceSquadro $piece La pièce à vérifier.
-     * @return bool True si la pièce a atteint la zone de retournement, false sinon.
-     */
-    private function aAtteintZoneRetournement(int $x, int $y, PieceSquadro $piece): bool
+    // Gestion du recul d'une pièce adverse
+    private function reculePiece(int $x, int $y): void
     {
+        $piece = $this->plateau->getPiece($x, $y);
+
+        if ($piece->getCouleur() === PieceSquadro::VIDE) return;
+
+        if ($piece->getCouleur() === PieceSquadro::BLANC) {
+            $departX = $x;
+            $departY = $this->estEnRetour($piece, $x, $y) ? 6 : 0;
+        } elseif ($piece->getCouleur() === PieceSquadro::NOIR) {
+            $departX = $this->estEnRetour($piece, $x, $y) ? 0 : 6;
+            $departY = $y;
+        }
+
+        $this->plateau->setPiece($piece,$departX, $departY);
+        $this->plateau->setPiece(PieceSquadro::initVide(),$x, $y);
+    }
+    // Vérification des limites du plateau
+    private function estHorsLimites(int $x, int $y): bool
+    {
+        return $x < 0 || $x >= 7 || $y < 0 || $y >= 7;
+    }
+    private function estEnRetour(PieceSquadro $piece, int $x, int $y): bool {
+        return ($piece->getCouleur() === PieceSquadro::BLANC && $y > 3) ||
+            ($piece->getCouleur() === PieceSquadro::NOIR && $x < 3);
+    }
+
+    // Vérification si une case est vide
+    private function caseLibre(int $x, int $y): bool
+    {
+        return $this->plateau->getPiece($x, $y)->getCouleur() === PieceSquadro::VIDE;
+    }
+    //
+    private function BordPlateauOuestEstNordSud(int $x, int $y, PieceSquadro $piece): bool {
         return ($piece->getCouleur() === PieceSquadro::BLANC && $y === 6) ||
             ($piece->getCouleur() === PieceSquadro::NOIR && $x === 0);
     }
 
     /**
-     * Vérifie si la pièce a terminé son aller-retour.
-     *
-     * @param int $x La position en x.
-     * @param int $y La position en y.
-     * @return bool True si la pièce a terminé son aller-retour, false sinon.
-     */
-    public function aTermineAllerRetour(int $x, int $y): bool
-    {
-        $piece = $this->plateau->getPiece($x, $y);
-        return ($piece->getCouleur() === PieceSquadro::BLANC && $y === 0) ||
-            ($piece->getCouleur() === PieceSquadro::NOIR && $x === 6);
-    }
-
-    /**
-     * Vérifie si une pièce a déjà effectué son aller.
-     *
-     * @param PieceSquadro $piece La pièce à vérifier.
-     * @return bool True si la pièce a déjà effectué son aller, false sinon.
-     */
-    private function aDejaEffectueAller(PieceSquadro $piece): bool
-    {
-        return ($piece->getCouleur() === PieceSquadro::BLANC && $piece->getDirection() === PieceSquadro::OUEST) ||
-            ($piece->getCouleur() === PieceSquadro::NOIR && $piece->getDirection() === PieceSquadro::SUD);
-    }
-
-    /**
      * Retire une pièce du plateau lorsqu'elle a terminé son aller-retour.
      *
-     * @param int $couleur La couleur de la pièce.
-     * @param int $x La position en x.
-     * @param int $y La position en y.
+     * @param int $couleur La couleur de la piece.
+     * @param int $rang le rang de la piece
      */
-    public function sortirPiece(int $couleur, int $x, int $y): void
+    public function sortPiece(int $couleur, int $rang): void
     {
-        $this->plateau->setPiece(PieceSquadro::initVide(), $x, $y);
-
         if ($couleur === PieceSquadro::BLANC) {
-            $_SESSION['squadro_count_blanc_sortie'] = ($_SESSION['squadro_count_blanc_sortie'] ?? 0) + 1;
+            $_SESSION['piecesBlanchesSorties'][] = $rang;
         } elseif ($couleur === PieceSquadro::NOIR) {
-            $_SESSION['squadro_count_noir_sortie'] = ($_SESSION['squadro_count_noir_sortie'] ?? 0) + 1;
+            $_SESSION['piecesNoiresSorties'][] = $rang;
         }
     }
 
@@ -238,34 +189,29 @@ class ActionSquadro
      *
      * @return bool True si une couleur a gagné, false sinon.
      */
-    public function remporteVictoire(): bool
-    {
-        return ($_SESSION['squadro_count_blanc_sortie'] ?? 0) >= 4 || ($_SESSION['squadro_count_noir_sortie'] ?? 0) >= 4;
+    public function remporteVictoire(int $couleur): bool {
+        return ($couleur === PieceSquadro::BLANC && count($_SESSION['piecesBlanchesSorties'] ?? []) >= 4) ||
+            ($couleur === PieceSquadro::NOIR && count($_SESSION['piecesNoiresSorties'] ?? []) >= 4);
     }
 
     /**
      * Affiche un message de victoire et termine la partie.
      */
-    private function afficherMessageVictoire(): void
-    {
-        $gagnant = ($_SESSION['squadro_count_blanc_sortie'] ?? 0) >= 4 ? "Blancs" : "Noirs";
+    private function victoire(): void{
+        $gagnant = (count($_SESSION['piecesBlanchesSorties'] ?? []) >= 4) ? "Blancs" : "Noirs";
 
-        $text = <<<TEXT
-<script src="https://cdn.tailwindcss.com"></script>
-<div class="flex items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat">
-    <div class="max-w-md mx-auto text-center bg-white bg-opacity-60 p-8 rounded-lg shadow-lg">
-        <div class="text-9xl font-bold text-indigo-600 mb-4">YOU WIN</div>
-        <h1 class="text-4xl font-bold text-gray-800 mb-6">Le gagnant du jour est $gagnant</h1>
-        <a href="?reset=true"
-           class="inline-block bg-indigo-600 text-white font-semibold px-6 py-3 rounded-md hover:bg-indigo-700 transition-colors duration-300">
-            Autre partie
-        </a>
-    </div>
-</div>
-TEXT;
+        echo '<div class="hero is-info is-fullheight">
+            <div class="hero-body">
+                <div class="container has-text-centered">
+                    <h1 class="title is-size-1 has-text-white">YOU WIN</h1>
+                    <h2 class="subtitle is-size-3 has-text-white">Le gagnant du jour est ' . $gagnant . '</h2>
+                    <a href="reset.php" class="button is-primary is-large mt-5">Autre partie</a>
+                </div>
+            </div>
+        </div>';
 
-        echo $text;
-        $this->partieTerminee = true;
+        $this->endgame = true;
         exit();
     }
+
 }

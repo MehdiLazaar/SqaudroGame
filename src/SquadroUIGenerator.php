@@ -69,13 +69,13 @@ class SquadroUIGenerator {
         $html .= '<p>Confirmez-vous le déplacement de la pièce en (' . $x . ', ' . $y . ') ?</p>';
 
         // Formulaire pour "Oui"
-        $html .= '<form action="ConfirmerChoix.php" method="POST">
+        $html .= '<form action="#" method="POST">
                 <input type="hidden" name="confirmer" value="oui">
                 <button type="submit">Oui</button>
               </form>';
 
         // Formulaire pour "Non"
-        $html .= '<form action="AnnulerChoix.php" method="POST">
+        $html .= '<form action="#" method="POST">
                 <input type="hidden" name="confirmer" value="non">
                 <button type="submit">Non</button>
               </form>';

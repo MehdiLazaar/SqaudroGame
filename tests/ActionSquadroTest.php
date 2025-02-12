@@ -1,8 +1,4 @@
 <?php
-
-require_once '../src/PieceSquadro.php';
-require __DIR__ . '/../vendor/autoload.php';
-
 use PHPUnit\Framework\TestCase;
 use src\ActionSquadro;
 use src\PieceSquadro;
@@ -10,72 +6,105 @@ use src\PlateauSquadro;
 
 class ActionSquadroTest extends TestCase
 {
-    private PlateauSquadro $plateau;
-    private ActionSquadro $action;
+    private $plateau;
+    private $actionSquadro;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
-        // Initialisation du plateau et de l'action
+        // Création d'un objet PlateauSquadro réel
         $this->plateau = new PlateauSquadro();
-        $this->action = new ActionSquadro($this->plateau);
 
-        // Initialisation de la session
-        session_start();
-        $_SESSION['joueurActif'] = PieceSquadro::BLANC; // Définissez le joueur actif (BLANC ou NOIR)
+        // Initialisation de l'actionSquadro avec le PlateauSquadro
+        $this->actionSquadro = new ActionSquadro($this->plateau);
+
+        // Configuration de la session pour les tests
+        $_SESSION['joueur'] = PieceSquadro::BLANC;
     }
 
-    /**
-     * Teste la méthode estJouablePiece.
-     */
-    public function testEstJouablePiece(): void
+    public function testGetJoueurRetourneBlancParDefaut()
     {
-        // Vérifie qu'une pièce vide n'est pas jouable
-        $this->assertFalse($this->action->estJouablePiece(0, 0));
-
-        // Vérifie qu'une pièce valide est jouable (ici on suppose que la pièce blanche est en (6, 1))
-        $this->assertTrue($this->action->estJouablePiece(6, 1)); // Pièce blanche initiale
+        // Test de la couleur du joueur actif
+        $this->assertEquals(PieceSquadro::BLANC, $this->actionSquadro->getJoueur());
     }
 
-    /**
-     * Teste la méthode sortPiece.
-     */
-    public function testSortPiece(): void
+    public function testChangerJoueur()
     {
-        // Simule la sortie d'une pièce
-        $this->expectOutputString("La pièce de couleur 0 et de rang 1 est retirée du plateau.");
-        $this->action->sortPiece(PieceSquadro::BLANC, 1);
+        // Test de l'inversion du joueur
+        $this->actionSquadro->changerJoueur();
+        $this->assertEquals(PieceSquadro::NOIR, $_SESSION['joueur']);
+
+        $this->actionSquadro->changerJoueur();
+        $this->assertEquals(PieceSquadro::BLANC, $_SESSION['joueur']);
     }
 
-    /**
-     * Teste la méthode remporteVictoire.
-     */
-    public function testRemporteVictoire(): void
+    public function testEstJouablePieceAvecPieceBlanche()
     {
-        // Vérifie qu'aucune couleur n'a gagné au début
-        $this->assertFalse($this->action->remporteVictoire(PieceSquadro::BLANC));
-        $this->assertFalse($this->action->remporteVictoire(PieceSquadro::NOIR));
+        // Utilisation de la méthode statique pour créer une pièce blanche
+        $pieceBlanche = PieceSquadro::initBlancEst();
 
-        // Simule une victoire pour les blancs en retirant toutes les colonnes jouables
-        $this->plateau->retireColonneJouable(1);
-        $this->plateau->retireColonneJouable(2);
-        $this->plateau->retireColonneJouable(3);
-        $this->plateau->retireColonneJouable(4);
-        $this->plateau->retireColonneJouable(5);
+        // Placer la pièce blanche sur le plateau
+        $this->plateau->setPiece($pieceBlanche, 0, 0);
 
-        $this->assertTrue($this->action->remporteVictoire(PieceSquadro::BLANC));
+        // Test si la pièce est jouable par le joueur actuel (blanc)
+        $this->assertTrue($this->actionSquadro->estJouablePiece(0, 0));
     }
 
-    /**
-     * Teste la méthode pieceDoitSortir.
-     */
-    public function testPieceDoitSortir(): void
+    public function testEstJouablePieceAvecPieceNoire()
     {
-        // Crée une pièce blanche en position de sortie
-        $piece = PieceSquadro::initBlancEst();
-        $this->assertTrue($this->action->pieceDoitSortir($piece, 6, 5)); // Doit sortir à l'est
+        // Utilisation de la méthode statique pour créer une pièce noire
+        $pieceNoire = PieceSquadro::initNoirSud();
 
-        // Crée une pièce noire en position de sortie
-        $piece = PieceSquadro::initNoirSud();
-        $this->assertTrue($this->action->pieceDoitSortir($piece, 5, 1)); // Doit sortir au sud
+        // Placer la pièce noire sur le plateau
+        $this->plateau->setPiece($pieceNoire, 0, 0);
+
+        // Test si la pièce n'est pas jouable par le joueur actuel (blanc)
+        $this->assertFalse($this->actionSquadro->estJouablePiece(0, 0));
+    }
+
+    public function testJouePieceAvecPieceIncorrecte()
+    {
+        // Utilisation de la méthode statique pour créer une pièce noire
+        $pieceNoire = PieceSquadro::initNoirSud();
+
+        // Placer la pièce noire sur le plateau
+        $this->plateau->setPiece($pieceNoire, 0, 0);
+
+        // Essayer de jouer une pièce incorrecte (le joueur est blanc)
+        $this->expectException(InvalidArgumentException::class);
+        $this->actionSquadro->jouePiece(0, 0);  // Le joueur est blanc, mais la pièce est noire
+    }
+
+    public function testSortPiece()
+    {
+        // Utilisation de la méthode statique pour créer une pièce blanche
+        $pieceBlanche = PieceSquadro::initBlancEst();
+
+        // Placer la pièce blanche sur le plateau
+        $this->plateau->setPiece($pieceBlanche, 0, 0);
+
+        // Simuler la sortie de la pièce
+        $this->actionSquadro->sortPiece(PieceSquadro::BLANC, 2);
+
+        // Vérifier que la pièce blanche a été ajoutée à la session des pièces sorties
+        $this->assertCount(1, $_SESSION['piecesBlanchesSorties']);
+        $this->assertEquals(2, $_SESSION['piecesBlanchesSorties'][0]);
+    }
+
+    public function testRemporteVictoireAvecBlanc()
+    {
+        // Simuler des pièces sorties pour le joueur blanc
+        $_SESSION['piecesBlanchesSorties'] = [1, 2, 3, 4];
+
+        // Vérification si le joueur blanc a gagné
+        $this->assertTrue($this->actionSquadro->remporteVictoire(PieceSquadro::BLANC));
+    }
+
+    public function testRemporteVictoireAvecNoir()
+    {
+        // Simuler des pièces sorties pour le joueur noir
+        $_SESSION['piecesNoiresSorties'] = [1, 2, 3, 4];
+
+        // Vérification si le joueur noir a gagné
+        $this->assertTrue($this->actionSquadro->remporteVictoire(PieceSquadro::NOIR));
     }
 }
