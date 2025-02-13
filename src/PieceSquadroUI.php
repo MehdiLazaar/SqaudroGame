@@ -41,8 +41,8 @@ class PieceSquadroUI {
         // 🔹 **Si la pièce est jouable, permettre le déplacement**
         return '
         <form action="#" method="POST">
-            <input type="hidden" name="ligne" value="' . $ligne . '">
-            <input type="hidden" name="colonne" value="' . $colonne . '">
+            <input type="hidden" name="x" value="' . $ligne . '">
+            <input type="hidden" name="y" value="' . $colonne . '">
             <button class="button is-small ' . $couleur . ' is-rounded" type="submit">Déplacer</button>
         </form>';
     }

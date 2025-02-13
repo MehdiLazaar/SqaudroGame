@@ -10,18 +10,22 @@ class SquadroUIGenerator {
      * @param string $title Le titre de la page.
      * @return string Le HTML du début de la page.
      */
-    public static function getDebutHTML(string $title = "SqaudroGame"): string {
+    public static function getDebutHTML(string $title = "SquadroGame"): string {
         return '<!DOCTYPE html>
-                <html lang="fr">
-                <head>
-                    <meta charset="utf-8" />
-                    <title>' . htmlspecialchars($title) . '</title>
-                    <link rel="stylesheet" href="path/to/tailwind.css" /> <!-- Assurez-vous que ce lien est correct -->
-                </head>
-                <body>
+            <html lang="fr">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>' . htmlspecialchars($title) . '</title>
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+            </head>
+            <body>
+                <section class="section">
                     <div class="container">
-                        <h1>' . htmlspecialchars($title) . '</h1>
-        ';
+                        <div class="box has-text-centered">
+                            <h1 class="title is-2">' . htmlspecialchars($title) . '</h1>
+                        </div>
+    ';
     }
     /**
      * Génère la fin du HTML pour la page.
@@ -41,13 +45,22 @@ class SquadroUIGenerator {
     public static function genererPageJouerPiece(PlateauSquadro $plateau, int $joueurActif): string {
         $html = self::getDebutHTML("Jouer une pièce");
 
-        // Affiche le plateau de jeu
-        $html .= '<div class="plateau">';
-        $html .= PieceSquadroUI::generationPlateauJeu($plateau, $joueurActif);
-        $html .= '</div>';
+        // Affiche le plateau de jeu avec un cadre stylisé
+        $html .= '<div class="box has-text-centered">
+                <h2 class="subtitle">Plateau de jeu</h2>
+                <div class="plateau">
+                    ' . PieceSquadroUI::generationPlateauJeu($plateau, $joueurActif) . '
+                </div>
+              </div>';
 
         // Affiche un message indiquant le joueur actif
-        $html .= '<p>C\'est au tour du joueur ' . ($joueurActif === PieceSquadro::BLANC ? 'blanc' : 'noir') . ' de jouer.</p>';
+        $html .= '<div class="notification is-info has-text-centered">
+                <p class="is-size-5">C\'est au tour du joueur 
+                    <strong class="has-text-' . ($joueurActif === PieceSquadro::BLANC ? 'light' : 'dark') . '">'
+            . ($joueurActif === PieceSquadro::BLANC ? 'Blanc' : 'Noir') .
+            '</strong> de jouer.
+                </p>
+              </div>';
 
         $html .= self::getFinHTML();
         return $html;
@@ -63,22 +76,33 @@ class SquadroUIGenerator {
      */
     public static function genererPageConfirmerDeplacement(PlateauSquadro $plateau, int $x, int $y): string {
         $html = self::getDebutHTML("Confirmer le déplacement");
-        $html .= '<div class="plateau">';
-        $html .= PieceSquadroUI::generationPlateauJeu($plateau, $plateau->getPiece($x, $y)->getCouleur());
-        $html .= '</div>';
-        $html .= '<p>Confirmez-vous le déplacement de la pièce en (' . $x . ', ' . $y . ') ?</p>';
 
-        // Formulaire pour "Oui"
-        $html .= '<form action="#" method="POST">
-                <input type="hidden" name="confirmer" value="oui">
-                <button type="submit">Oui</button>
-              </form>';
+        // Affichage du plateau de jeu avec la pièce sélectionnée
+        $html .= '<div class="box has-text-centered">
+                <h2 class="subtitle">Plateau de jeu</h2>
+                <div class="plateau">
+                    ' . PieceSquadroUI::generationPlateauJeu($plateau, $plateau->getPiece($x, $y)->getCouleur()) . '
+                </div>
+              </div>';
 
-        // Formulaire pour "Non"
-        $html .= '<form action="#" method="POST">
-                <input type="hidden" name="confirmer" value="non">
-                <button type="submit">Non</button>
-              </form>';
+        // Message de confirmation
+        $html .= '<div class="notification is-warning has-text-centered">
+                <p class="is-size-5">Confirmez-vous le déplacement de la pièce en 
+                   <strong>(' . $x . ', ' . $y . ')</strong> ?
+                </p>
+              </div>';
+
+        // Boutons de confirmation sous forme de formulaire avec Bulma
+        $html .= '<div class="buttons is-centered">
+                <form action="../public/index.php" method="POST">
+                    <input type="hidden" name="confirmer" value="oui">
+                    <button type="submit" class="button is-success">Oui</button>
+                </form>
+                <form action="../public/index.php" method="POST">
+                    <input type="hidden" name="confirmer" value="non">
+                    <button type="submit" class="button is-danger">Non</button>
+                </form>
+              </div>';
 
         $html .= self::getFinHTML();
         return $html;
@@ -94,18 +118,55 @@ class SquadroUIGenerator {
     public static function genererPageVictoire(PlateauSquadro $plateau, int $joueurGagnant): string {
         $html = self::getDebutHTML("Victoire !");
 
-        // Affiche le plateau de jeu
-        $html .= '<div class="plateau">';
-        $html .= PieceSquadroUI::generationPlateauJeu($plateau, $joueurGagnant);
-        $html .= '</div>';
+        // Affichage du plateau final
+        $html .= '<div class="box has-text-centered">
+                <h2 class="subtitle">Plateau final</h2>
+                <div class="plateau">
+                    ' . PieceSquadroUI::generationPlateauJeu($plateau, $joueurGagnant) . '
+                </div>
+              </div>';
 
-        // Affiche le message de victoire
-        $html .= '<p>Le joueur ' . ($joueurGagnant === PieceSquadro::BLANC ? 'blanc' : 'noir') . ' a gagné !</p>';
+        // Message de victoire stylisé
+        $html .= '<div class="notification is-success has-text-centered">
+                <p class="is-size-4">
+                    🎉 Félicitations ! Le joueur 
+                    <strong class="has-text-' . ($joueurGagnant === PieceSquadro::BLANC ? 'primary' : 'dark') . '">'
+            . ($joueurGagnant === PieceSquadro::BLANC ? 'Blanc' : 'Noir') .
+            '</strong> a gagné ! 🏆
+                </p>
+              </div>';
 
-        // Bouton pour recommencer une nouvelle partie
-        $html .= '<form action="#" method="POST">
-                    <button type="submit">Rejouer</button>
-                  </form>';
+        // Bouton pour rejouer avec Bulma
+        $html .= '<div class="buttons is-centered">
+                <form action="../public/index.php" method="POST">
+                    <button type="submit" class="button is-info is-large">🔄 Rejouer</button>
+                </form>
+              </div>';
+
+        $html .= self::getFinHTML();
+        return $html;
+    }
+    /**
+     * Génère une page d'erreur avec un message spécifique.
+     *
+     * @param string $message Le message d'erreur à afficher.
+     * @return string Le HTML de la page d'erreur.
+     */
+    public static function pageDErreur(string $message): string {
+        $html = self::getDebutHTML("Erreur");
+
+        // Contenu de la page d'erreur avec une alerte stylisée
+        $html .= '<div class="notification is-danger is-light has-text-centered">
+                <h2 class="title is-4">⚠️ Une erreur est survenue</h2>
+                <p class="is-size-5">' . htmlspecialchars($message) . '</p>
+              </div>';
+
+        // Bouton de retour à l'accueil centré
+        $html .= '<div class="has-text-centered">
+                <a href="../public/index.php" class="button is-primary is-medium">
+                    🔄 Retour à l\'accueil
+                </a>
+              </div>';
 
         $html .= self::getFinHTML();
         return $html;
