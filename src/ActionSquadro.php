@@ -33,7 +33,6 @@ class ActionSquadro
      *
      * @param int $x La position en x.
      * @param int $y La position en y.
-     * @param int $joueur La couleur du joueur actif.
      * @return bool True si la pièce est jouable, false sinon.
      */
     public function estJouablePiece(int $x, int $y): bool
@@ -86,7 +85,7 @@ class ActionSquadro
             $this->victoire();
         }
         //On change le joueur du blanc vers noir et vice versa.
-        $this->chnagerJoueur();
+        $this->changerJoueur();
     }
     /**
      *
@@ -197,21 +196,17 @@ class ActionSquadro
     /**
      * Affiche un message de victoire et termine la partie.
      */
-    private function victoire(): void{
-        $gagnant = (count($_SESSION['piecesBlanchesSorties'] ?? []) >= 4) ? "Blancs" : "Noirs";
+    private function victoire(): void {
+        // Récupérer le gagnant
+        $gagnant = (count($_SESSION['piecesBlanchesSorties'] ?? []) >= 4) ? PieceSquadro::BLANC : PieceSquadro::NOIR;
 
-        echo '<div class="hero is-info is-fullheight">
-            <div class="hero-body">
-                <div class="container has-text-centered">
-                    <h1 class="title is-size-1 has-text-white">YOU WIN</h1>
-                    <h2 class="subtitle is-size-3 has-text-white">Le gagnant du jour est ' . $gagnant . '</h2>
-                    <a href="reset.php" class="button is-primary is-large mt-5">Autre partie</a>
-                </div>
-            </div>
-        </div>';
+        // Générer la page de victoire en utilisant la méthode de SquadroUIGenerator
+        echo \src\SquadroUIGenerator::genererPageVictoire($this->plateau, $gagnant);
 
+        // Terminer le jeu
         $this->endgame = true;
         exit();
     }
+
 
 }

@@ -77,13 +77,7 @@ class SquadroUIGenerator {
     public static function genererPageConfirmerDeplacement(PlateauSquadro $plateau, int $x, int $y): string {
         $html = self::getDebutHTML("Confirmer le déplacement");
 
-        // Affichage du plateau de jeu avec la pièce sélectionnée
-        $html .= '<div class="box has-text-centered">
-                <h2 class="subtitle">Plateau de jeu</h2>
-                <div class="plateau">
-                    ' . PieceSquadroUI::generationPlateauJeu($plateau, $plateau->getPiece($x, $y)->getCouleur()) . '
-                </div>
-              </div>';
+
 
         // Message de confirmation
         $html .= '<div class="notification is-warning has-text-centered">
@@ -94,11 +88,11 @@ class SquadroUIGenerator {
 
         // Boutons de confirmation sous forme de formulaire avec Bulma
         $html .= '<div class="buttons is-centered">
-                <form action="../public/index.php" method="POST">
+                <form action="../public/traiteActionSquadro.php" method="POST">
                     <input type="hidden" name="confirmer" value="oui">
                     <button type="submit" class="button is-success">Oui</button>
                 </form>
-                <form action="../public/index.php" method="POST">
+                <form action="../public/traiteActionSquadro.php" method="POST">
                     <input type="hidden" name="confirmer" value="non">
                     <button type="submit" class="button is-danger">Non</button>
                 </form>
@@ -117,14 +111,6 @@ class SquadroUIGenerator {
      */
     public static function genererPageVictoire(PlateauSquadro $plateau, int $joueurGagnant): string {
         $html = self::getDebutHTML("Victoire !");
-
-        // Affichage du plateau final
-        $html .= '<div class="box has-text-centered">
-                <h2 class="subtitle">Plateau final</h2>
-                <div class="plateau">
-                    ' . PieceSquadroUI::generationPlateauJeu($plateau, $joueurGagnant) . '
-                </div>
-              </div>';
 
         // Message de victoire stylisé
         $html .= '<div class="notification is-success has-text-centered">

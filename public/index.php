@@ -5,14 +5,14 @@ use src\PlateauSquadro;
 use src\ActionSquadro;
 use src\PieceSquadro;
 use src\SquadroUIGenerator;
-use src\PieceSquadroUI;
 
 require_once __DIR__ . '/../src/PieceSquadro.php';
 require_once __DIR__ . '/../src/PlateauSquadro.php';
 require_once __DIR__ . '/../src/ActionSquadro.php';
-require_once __DIR__ . '/../src/PieceSquadroUI.php';
 require_once __DIR__ . '/../src/SquadroUIGenerator.php';
+require_once __DIR__ . '/../src/PieceSquadroUI.php';
 
+// Initialisation du plateau si la session n'existe pas
 if (!isset($_SESSION['plateau'])) {
     $plateau = new PlateauSquadro();
     $_SESSION['plateau'] = $plateau->toJson();
@@ -21,67 +21,29 @@ if (!isset($_SESSION['plateau'])) {
     try {
         $plateau = PlateauSquadro::fromJson($_SESSION['plateau']);
     } catch (Exception $e) {
-        echo SquadroUIGenerator::pageDErreur("Erreur y a pas de plateau de jeu!!!! : " . $e->getMessage());
+        echo SquadroUIGenerator::pageDErreur("Erreur : Impossible de récupérer le plateau ! " . $e->getMessage());
         session_destroy();
         exit;
     }
 }
 
-$actionSquadro = new ActionSquadro($plateau);
 $joueur = $_SESSION['joueur'];
+$actionSquadro = new ActionSquadro($plateau);
 
-if ($actionSquadro->remporteVictoire($joueur)) {
-    $_SESSION['partieTerminee'] = true;
-    $_SESSION['gagnant'] = $joueur;
-    echo SquadroUIGenerator::genererPageVictoire($plateau, $joueur);
-    session_destroy();
+// Si l'état de confirmation n'est pas actif, on affiche directement la page de jeu
+if (!isset($_SESSION['confirmation']) || !$_SESSION['confirmation']) {
+    echo SquadroUIGenerator::genererPageJouerPiece($plateau, $joueur);
     exit;
 }
 
-$action = $_POST['action'] ?? 'default';
-
-switch ($action) {
-    case 'selectionnerPiece':
-        if (isset($_POST['x']) && isset($_POST['y'])) {
-            $_SESSION['pieceChoisi'] = [
-                'x' => (int)$_POST['x'],
-                'y' => (int)$_POST['y']
-            ];
-            echo SquadroUIGenerator::genererPageConfirmerDeplacement(
-                $plateau,
-                $_SESSION['pieceChoisi']['x'],
-                $_SESSION['pieceChoisi']['y'],
-            );
-            exit;
-        }
-        break;
-
-    case 'confirmerDeplacement':
-        if (isset($_SESSION['pieceChoisi'])) {
-            $ligne = $_SESSION['pieceChoisi']['x'];
-            $colonne = $_SESSION['pieceChoisi']['y'];
-
-            $actionSquadro->jouePiece($ligne, $colonne);
-            unset($_SESSION['pieceChoisi']);
-
-            if ($actionSquadro->remporteVictoire($joueur)) {
-                $_SESSION['partieTerminee'] = true;
-                $_SESSION['gagnant'] = $joueur;
-                echo SquadroUIGenerator::genererPageVictoire($plateau, $joueur);
-                session_destroy();
-                exit;
-            }
-        }
-        break;
-
-    case 'annulerSelection':
-        unset($_SESSION['pieceChoisi']);
-        break;
-
-    default:
-        echo SquadroUIGenerator::genererPageJouerPiece($plateau, $joueur);
-        exit;
+// Si l'utilisateur a sélectionné une pièce et est en phase de confirmation
+if (isset($_SESSION['pieceChoisi'])) {
+    $x = $_SESSION['pieceChoisi']['x'];
+    $y = $_SESSION['pieceChoisi']['y'];
+    echo SquadroUIGenerator::genererPageConfirmerDeplacement($plateau, $x, $y);
+    exit;
 }
 
-$_SESSION['plateau'] = $plateau->toJson();
-
+// En cas d'erreur inattendue, retour au jeu
+echo SquadroUIGenerator::genererPageJouerPiece($plateau, $joueur);
+exit;
