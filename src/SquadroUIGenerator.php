@@ -77,8 +77,6 @@ class SquadroUIGenerator {
     public static function genererPageConfirmerDeplacement(PlateauSquadro $plateau, int $x, int $y): string {
         $html = self::getDebutHTML("Confirmer le déplacement");
 
-
-
         // Message de confirmation
         $html .= '<div class="notification is-warning has-text-centered">
                 <p class="is-size-5">Confirmez-vous le déplacement de la pièce en 
@@ -87,15 +85,18 @@ class SquadroUIGenerator {
               </div>';
 
         // Boutons de confirmation sous forme de formulaire avec Bulma
+        // 1er formulaire = confirmerChoix
         $html .= '<div class="buttons is-centered">
                 <form action="../public/traiteActionSquadro.php" method="POST">
                     <input type="hidden" name="confirmer" value="oui">
                     <button type="submit" class="button is-success">Oui</button>
-                </form>
-                <form action="../public/traiteActionSquadro.php" method="POST">
-                    <input type="hidden" name="confirmer" value="non">
-                    <button type="submit" class="button is-danger">Non</button>
-                </form>
+                </form>';
+
+        // 2e formulaire = annulerChoix
+        $html .= '<form action="../public/traiteActionSquadro.php" method="POST">
+                    <input type="hidden" name="action" value="annulerChoix">
+                    <button type="submit" class="button is-danger">Annuler</button>
+              </form>
               </div>';
 
         $html .= self::getFinHTML();
@@ -112,7 +113,6 @@ class SquadroUIGenerator {
     public static function genererPageVictoire(PlateauSquadro $plateau, int $joueurGagnant): string {
         $html = self::getDebutHTML("Victoire !");
 
-        // Message de victoire stylisé
         $html .= '<div class="notification is-success has-text-centered">
                 <p class="is-size-4">
                     🎉 Félicitations ! Le joueur 
@@ -122,9 +122,10 @@ class SquadroUIGenerator {
                 </p>
               </div>';
 
-        // Bouton pour rejouer avec Bulma
+        // On envoie action=rejouer
         $html .= '<div class="buttons is-centered">
-                <form action="../public/index.php" method="POST">
+                <form action="../public/traiteActionSquadro.php" method="POST">
+                    <input type="hidden" name="action" value="rejouer">
                     <button type="submit" class="button is-info is-large">🔄 Rejouer</button>
                 </form>
               </div>';

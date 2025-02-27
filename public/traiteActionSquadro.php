@@ -66,6 +66,25 @@ if (isset($_POST['confirmer'])) {
     header("Location: index.php");
     exit;
 }
+// 1) Gérer AnnulerChoix
+if (isset($_POST['action']) && $_POST['action'] === 'annulerChoix') {
+    // On oublie la pièce sélectionnée et on repasse à l'état ChoixPièce
+    unset($_SESSION['confirmation'], $_SESSION['pieceChoisi']);
+
+    // Redirection vers la page de jeu
+    header("Location: index.php");
+    exit;
+}
+// l'action rejouer
+if (isset($_POST['action']) && $_POST['action'] === 'rejouer') {
+    // On upprime les informations de session
+    session_destroy();
+    session_start();
+
+    // On redirige vers index.php qui va ré-initialiser la partie
+    header("Location: index.php");
+    exit;
+}
 
 // Si aucune action détectée, retour au jeu
 header("Location: index.php");

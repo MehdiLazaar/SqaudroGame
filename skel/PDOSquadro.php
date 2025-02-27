@@ -1,6 +1,7 @@
 <?php
 namespace Squadro;
 
+use Exception;
 use PDO;
 use PDOException;
 use PDOStatement;
@@ -37,25 +38,27 @@ class PDOSquadro
     private static PDOStatement $selectPlayerByName;
 
     /******** Gestion des requêtes relatives à JoueurSquadro *************/
-    public static function createPlayer(string $name): JoueurSquadro
-    {
-        if (!isset(self::$createPlayerSquadro))
-            self::$createPlayerSquadro = self::$pdo->prepare('INSERT INTO JoueurSquadro(joueurNom) VALUES (:name)');
-
-        self::$createPlayerSquadro->bindValue(':name', $name, PDO::PARAM_STR);
-        self::$createPlayerSquadro->execute();
-
-        return self::selectPlayerByName($name);
+    public static function createPlayer(string $name): JoueurSquadro{
+        if (!isset(self::$createPlayerSquadro)) {
+            self::$createPlayerSquadro = self::$pdo->prepare(
+                'INSERT INTO JoueurSquadro(joueurNom) VALUES (:name)'
+            );
+        }
+        self::$createPlayerSquadro->execute([':name' => $name]);
+        $dernierId = self::$pdo->lastInsertId();
+        return new JoueurSquadro($name,(int)$dernierId);
     }
 
-    public static function selectPlayerByName(string $name): ?JoueurSquadro
-    {
-        if (!isset(self::$selectPlayerByName))
-            self::$selectPlayerByName = self::$pdo->prepare('SELECT * FROM JoueurSquadro WHERE joueurNom=:name');
+    public static function selectPlayerByName(string $name): ?JoueurSquadro{
+        if (!isset(self::$selectPlayerByName)) {
+            self::$selectPlayerByName = self::$pdo->prepare(
+                'SELECT id, joueurNom AS nomJoueur FROM JoueurSquadro WHERE joueurNom = :name'
+            );
+        }
         self::$selectPlayerByName->bindValue(':name', $name, PDO::PARAM_STR);
         self::$selectPlayerByName->execute();
-        $joueuer = self::$selectPlayerByName->fetchObject(JoueurSquadro::class);
-        return ($joueuer) ? $joueuer : null;
+        $player = self::$selectPlayerByName->fetch(PDO::FETCH_ASSOC);
+        return $player ? new JoueurSquadro($player['nomJoueur'], $player['id']) : null;
     }
 
     /* requêtes préparées pour l'entite PartieSquadro */
@@ -71,7 +74,7 @@ class PDOSquadro
     /**
      * initialisation et execution de $createPartieSquadro la requête préparée pour enregistrer une nouvelle partie
      */
-    public static function createPartieSquadro(string $playerName, string $json): void
+    public static function createPartieSquadro(string $playerName, string $json): int
     {
         if (!isset(self::$createPartieSquadro)) {
             self::$createPartieSquadro = self::$pdo->prepare(
@@ -82,26 +85,42 @@ class PDOSquadro
         try {
             self::$pdo->beginTransaction();
 
-            // Vérifier si le joueur existe
+            // Vérification que le joueur existe
             $player = self::selectPlayerByName($playerName);
             if (!$player) {
-                echo "Le joueur n'existe pas.";
-                return;
+                throw new Exception("Le joueur '$playerName' n'existe pas dans la base de données.");
             }
 
-            $playerId = $player->getId();
-            $gameStatus = 'initialized'; // Remplacer 'constructed' par 'initialized' (correspond à la table)
+            // Création de la partie avec le joueur
+            self::$createPartieSquadro->execute([
+                ':playerOne' => $player->getId(),
+                ':gameStatus' => 'initialized',
+                ':json' => $json
+            ]);
 
-            // Lier les valeurs correctes
-            self::$createPartieSquadro->bindValue(':playerOne', $playerId, PDO::PARAM_INT);
-            self::$createPartieSquadro->bindValue(':gameStatus', $gameStatus, PDO::PARAM_STR);
-            self::$createPartieSquadro->bindValue(':json', $json, PDO::PARAM_STR);
-            self::$createPartieSquadro->execute();
+            // Récupérer l'ID de la dernière partie insérée
+            $dernierId = self::$pdo->lastInsertId();
 
+            // Mettre à jour l'objet PartieSquadro avec l'ID de la partie
+            $partie = PartieSquadro::fromJson(); // Récupère la partie depuis la session
+            $partie->setPartieID((int)$dernierId);
+
+            // Mettre à jour le JSON avec le nouvel ID de la partie
+            $updatedJson = $partie->toJson($dernierId);
+
+            // Mettre à jour la base de données avec le JSON mis à jour
+            self::savePartieSquadro('initialized', $updatedJson, $dernierId); // Appel correct de la méthode
+
+            // Sauvegarder l'ID de la partie en session uniquement pour cette nouvelle partie
+            $_SESSION['newPartieId'] = $dernierId;
             self::$pdo->commit();
-        } catch (PDOException $e) {
+
+            // Retourner l'ID de la partie insérée
+            return (int)$dernierId;
+        } catch (Exception $e) {
             self::$pdo->rollBack();
-            echo "Erreur lors de la création de la partie : " . $e->getMessage();
+            echo "Erreur : " . $e->getMessage();
+            return 0; // Retourner 0 en cas d'erreur
         }
     }
 
@@ -119,14 +138,11 @@ class PDOSquadro
 
         try {
             self::$pdo->beginTransaction();
-
-            // Lier correctement les paramètres
-            self::$savePartieSquadro->bindValue(':gameStatus', $gameStatus, PDO::PARAM_STR);
-            self::$savePartieSquadro->bindValue(':json', $json, PDO::PARAM_STR);
-            self::$savePartieSquadro->bindValue(':partieId', $partieId, PDO::PARAM_INT); // Correction ici
-
-            self::$savePartieSquadro->execute();
-
+            self::$savePartieSquadro->execute([
+                ':gameStatus' => $gameStatus,
+                ':json' => $json,
+                ':partieId' => $partieId
+            ]);
             self::$pdo->commit();
         } catch (PDOException $e) {
             self::$pdo->rollBack();
@@ -169,6 +185,7 @@ class PDOSquadro
     public static function getAllPartieSquadroByPlayerName(string $playerName): array
     {
 	/** TODO **/
+
     }
     /**
      * initialisation et execution de la requête préparée pour récupérer

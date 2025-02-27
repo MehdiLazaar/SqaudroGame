@@ -48,33 +48,28 @@ class PartieSquadro {
             'joueurActif' => $this->getJoueurActif(),
             'gameStatus' => $this->gameStatus,
             'joueurs' => array_map(fn($joueur) => [
-                'nom' => $joueur->getNomJoueur(),
+                'nomJoueur' => $joueur->getNomJoueur(),
                 'id' => $joueur->getId()
             ], $this->joueurs)
         ]);
     }
     public static function fromJson(): PartieSquadro {
+        // On suppose que les données sont stockées en session sous le nom 'partieSquadro'
         if (!isset($_SESSION['partieSquadro'])) {
             throw new \Exception("Aucune partie sauvegardée en session !");
         }
-
         $json = $_SESSION['partieSquadro'];
         $data = json_decode($json, true);
-
         if (!$data) {
             throw new \Exception("Données JSON invalides !");
         }
-
         // Création de la partie avec le premier joueur
-        $playerOne = new JoueurSquadro();
-        $playerOne->setNomJoueur($data['joueurs'][self::PLAYER_ONE]['nom']);
-        $playerOne->setId($data['joueurs'][self::PLAYER_ONE]['id']);
+        $playerOne = new JoueurSquadro($data['joueurs'][self::PLAYER_ONE]['nom'], $data['joueurs'][self::PLAYER_ONE]['id']);
 
         $partie = new self($playerOne);
         $partie->setPartieID($data['partieId']);
         $partie->joueurActif = $data['joueurActif'];
         $partie->gameStatus = $data['gameStatus'];
-
         // Ajout du deuxième joueur s'il existe
         if (isset($data['joueurs'][self::PLAYER_TWO])) {
             $playerTwo = new JoueurSquadro();
@@ -82,7 +77,6 @@ class PartieSquadro {
             $playerTwo->setId($data['joueurs'][self::PLAYER_TWO]['id']);
             $partie->joueurs[self::PLAYER_TWO] = $playerTwo;
         }
-
         return $partie;
     }
 }
