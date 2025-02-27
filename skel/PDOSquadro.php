@@ -49,7 +49,7 @@ class PDOSquadro
         return new JoueurSquadro($name,(int)$dernierId);
     }
 
-    public static function selectPlayerByName(string $name): ?JoueurSquadro{
+    public static function selectPlayerByName(string $name): ?JoueurSquadro {
         if (!isset(self::$selectPlayerByName)) {
             self::$selectPlayerByName = self::$pdo->prepare(
                 'SELECT id, joueurNom AS nomJoueur FROM JoueurSquadro WHERE joueurNom = :name'
@@ -58,7 +58,7 @@ class PDOSquadro
         self::$selectPlayerByName->bindValue(':name', $name, PDO::PARAM_STR);
         self::$selectPlayerByName->execute();
         $player = self::$selectPlayerByName->fetch(PDO::FETCH_ASSOC);
-        return $player ? new JoueurSquadro($player['nomJoueur'], $player['id']) : null;
+        return $player ? new JoueurSquadro($player['nomjoueur'], $player['id']) : null;
     }
 
     /* requêtes préparées pour l'entite PartieSquadro */
@@ -100,16 +100,6 @@ class PDOSquadro
 
             // Récupérer l'ID de la dernière partie insérée
             $dernierId = self::$pdo->lastInsertId();
-
-            // Mettre à jour l'objet PartieSquadro avec l'ID de la partie
-            $partie = PartieSquadro::fromJson(); // Récupère la partie depuis la session
-            $partie->setPartieID((int)$dernierId);
-
-            // Mettre à jour le JSON avec le nouvel ID de la partie
-            $updatedJson = $partie->toJson($dernierId);
-
-            // Mettre à jour la base de données avec le JSON mis à jour
-            self::savePartieSquadro('initialized', $updatedJson, $dernierId); // Appel correct de la méthode
 
             // Sauvegarder l'ID de la partie en session uniquement pour cette nouvelle partie
             $_SESSION['newPartieId'] = $dernierId;
@@ -154,9 +144,53 @@ class PDOSquadro
     /**
      * initialisation et execution de $addPlayerToPartieSquadro la requête préparée pour intégrer le second joueur
      */
-    public static function addPlayerToPartieSquadro(string $playerName, string $json, int $gameId): void
-    {
-	/** TODO **/
+    public static function addPlayerToPartieSquadro(string $playerName, int $gameId): void {
+        if (!isset(self::$addPlayerToPartieSquadro)) {
+            self::$addPlayerToPartieSquadro = self::$pdo->prepare(
+                "UPDATE PartieSquadro 
+             SET json = :json, playerTwo = :playerTwo, gameStatus = :gameStatus 
+             WHERE partieId = :gameId AND gameStatus = 'initialized'"
+            );
+        }
+
+        try {
+            self::$pdo->beginTransaction();
+
+            // Récupérer la partie existante depuis la base
+            $game = self::getPartieSquadroById($gameId);
+            if (!$game) {
+                throw new Exception("La partie avec l'ID $gameId n'existe pas.");
+            }
+
+            // Récupérer le joueur (celui qui rejoint)
+            $player = self::selectPlayerByName($playerName);
+            if (!$player) {
+                throw new Exception("Le joueur '$playerName' n'existe pas.");
+            }
+
+            // Ajouter le joueur à la partie (si pas déjà présent)
+            $game->addJoueur($player);
+
+            // Mettre à jour le statut de la partie avec une valeur autorisée
+            $game->gameStatus = 'waitingForPlayer';
+
+            // Calculer le JSON mis à jour (toJson retourne déjà une chaîne JSON)
+            $updatedJson = $game->toJson($gameId);
+
+            // Exécuter la mise à jour en base
+            self::$addPlayerToPartieSquadro->execute([
+                ':json' => $updatedJson,
+                ':playerTwo' => $player->getId(),
+                ':gameStatus' => $game->gameStatus,
+                ':gameId' => $gameId
+            ]);
+
+            self::$pdo->commit();
+        } catch (Exception $e) {
+            self::$pdo->rollBack();
+            error_log("Erreur lors de l'ajout du joueur à la partie : " . $e->getMessage());
+            echo "Erreur lors de l'ajout du joueur à la partie.";
+        }
     }
 
     /**
@@ -165,8 +199,31 @@ class PDOSquadro
      */
     public static function getPartieSquadroById(int $gameId): ?PartieSquadro
     {
-	/** TODO **/
-        return null;
+        if (!isset(self::$selectPartieSquadroById)) {
+            self::$selectPartieSquadroById = self::$pdo->prepare(
+                'SELECT json FROM PartieSquadro WHERE partieId = :gameId'
+            );
+        }
+
+        try {
+            self::$selectPartieSquadroById->execute([':gameId' => $gameId]);
+            $json = self::$selectPartieSquadroById->fetchColumn();
+
+            if (!$json) {
+                throw new Exception("Aucune partie trouvée avec l'ID $gameId.");
+            }
+
+            // Sauvegarde temporaire en session
+            $_SESSION['partieSquadro'] = $json;
+
+            return PartieSquadro::fromJson($json);
+        } catch (PDOException $e) {
+            echo "Erreur lors de la récupération de la partie : " . $e->getMessage();
+            return null;
+        } catch (Exception $e) {
+            echo "Erreur : " . $e->getMessage();
+            return null;
+        }
     }
     /**
      * initialisation et execution de $selectAllPartieSquadro la requête préparée pour récupérer toutes
@@ -174,7 +231,39 @@ class PDOSquadro
      */
     public static function getAllPartieSquadro(): array
     {
-	/** TODO **/
+        if (!isset(self::$selectAllPartieSquadro)) {
+            self::$selectAllPartieSquadro = self::$pdo->prepare(
+                'SELECT partieId, gameStatus, json FROM PartieSquadro'
+            );
+        }
+
+        self::$selectAllPartieSquadro->execute();
+        $parties = self::$selectAllPartieSquadro->fetchAll(PDO::FETCH_ASSOC);
+
+        $result = [];
+        foreach ($parties as $partie) {
+            $data = json_decode($partie['json'], true);
+            if (!$data) {
+                continue;
+            }
+
+            $playerOneData = $data['joueurs'][0];
+            $playerOne = new JoueurSquadro($playerOneData['nomJoueur'], $playerOneData['id']);
+            $partieObj = new PartieSquadro($playerOne);
+            $partieObj->setPartieID((int) $partie['partieid']); // clé en minuscule
+            $partieObj->gameStatus = $partie['gamestatus']; // clé en minuscule
+            $partieObj->joueurActif = $data['joueurActif'];
+
+            if (isset($data['joueurs'][1])) {
+                $playerTwoData = $data['joueurs'][1];
+                $playerTwo = new JoueurSquadro($playerTwoData['nomJoueur'], $playerTwoData['id']);
+                $partieObj->addJoueur($playerTwo);
+            }
+
+            $result[] = $partieObj;
+        }
+
+        return $result;
     }
 
     /**

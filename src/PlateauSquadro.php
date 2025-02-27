@@ -1,7 +1,7 @@
 <?php
 namespace src;
+require_once 'PieceSquadro.php';
 use InvalidArgumentException;
-
 
 class PlateauSquadro
 {

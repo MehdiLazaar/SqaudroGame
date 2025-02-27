@@ -158,4 +158,25 @@ class SquadroUIGenerator {
         $html .= self::getFinHTML();
         return $html;
     }
+    /**
+     * Génère une balise HTML avec le contenu et les attributs donnés.
+     *
+     * @param string $tag Le nom de la balise (exemple : "div", "a", "button").
+     * @param string $content Le contenu HTML placé à l'intérieur de la balise.
+     * @param array $attributes Un tableau associatif des attributs (clé => valeur).
+     * @return string La chaîne HTML générée.
+     */
+    public static function intoBalise(string $tag, string $content = '', array $attributes = []): string
+    {
+        $attrStr = '';
+        foreach ($attributes as $name => $value) {
+            // Sécurisation de la valeur des attributs avec htmlspecialchars
+            $attrStr .= ' ' . $name . '="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '"';
+        }
+        if ($content === '') {
+            return "<$tag$attrStr />";
+        } else {
+            return "<$tag$attrStr>$content</$tag>";
+        }
+    }
 }

@@ -3,148 +3,197 @@ require_once 'env/db.php';
 require_once 'skel/PDOSquadro.php';
 require_once __DIR__ . '/src/JoueurSquadro.php';
 require_once __DIR__ . '/src/PartieSquadro.php';
-
-session_start();
+require_once __DIR__ . '/src/SquadroUIGenerator.php';
 
 use Squadro\PDOSquadro;
 use src\JoueurSquadro;
 use src\PartieSquadro;
+use src\SquadroUIGenerator;
 
-PDOSquadro::initPDO($_ENV['sgbd'], $_ENV['host'], $_ENV['database'], $_ENV['user'], $_ENV['password']);
+session_start();
 
-if (!($_SESSION['player'] instanceof JoueurSquadro)) {
+// Vérifie qu'un joueur est connecté, sinon redirige vers login.php
+if (!isset($_SESSION['player']) || !($_SESSION['player'] instanceof JoueurSquadro)) {
     header('Location: login.php');
     exit();
 }
 
 $player = $_SESSION['player'];
 
-// Créer une nouvelle partie
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newGame'])) {
-    // Créer une nouvelle partie
-    $newPartie = new PartieSquadro($player);
+// Initialisation de la connexion à la BDD
+PDOSquadro::initPDO($_ENV['sgbd'], $_ENV['host'], $_ENV['database'], $_ENV['user'], $_ENV['password']);
 
-    // Convertir la partie en JSON
-    $jsonPartie = $newPartie->toJson($newPartie->getPartieID());
+// Récupère toutes les parties
+$allParties = PDOSquadro::getAllPartieSquadro();
 
-    // Créer la partie avec le statut "initialized"
-    PDOSquadro::createPartieSquadro($player->getNomJoueur(), $jsonPartie);
+$partiesEnAttente = [];
+$partiesEnCours   = [];
+$partiesTerminees = [];
 
-    // Sauvegarder l'ID de la partie dans la session
-    $_SESSION['partieSquadro'] = $jsonPartie; // Stocke la partie dans la session
-
-    // Rafraîchir la page pour voir la mise à jour
-    header("Location: index.php");
-    exit();
+// Tri des parties selon leur statut
+foreach ($allParties as $partie) {
+    switch ($partie->gameStatus) {
+        case 'initialized':
+            $partiesEnAttente[] = $partie;
+            break;
+        case 'waitingForPlayer':
+            $partiesEnCours[] = $partie;
+            break;
+        case 'finished':
+            $partiesTerminees[] = $partie;
+            break;
+    }
 }
 
-// Ajouter le deuxième joueur à la partie
-if (isset($_GET['partieSquadro'])) {
-    $partieId = $_GET['partieSquadro'];
-    $partie = PDOSquadro::getPartieSquadroById($partieId);
-
-    if ($partie && $partie->gameStatus === 'initialized') {
-        // Ajouter le deuxième joueur à la partie
-        PDOSquadro::addPlayerToPartieSquadro($player->getNomJoueur(), $partie->toJson(), $partieId);
-
-        // Mettre à jour la partie avec le statut 'inProgress' et enregistrer
-        PDOSquadro::savePartieSquadro('inProgress', $partie->toJson(), $partieId);
-
-        // Mettre à jour la session avec la partie en cours
-        $_SESSION['partieSquadro'] = $partie->toJson();
-
-        // Rafraîchir la page pour voir la mise à jour
-        header("Location: index.php");
+$errorMsg = "";
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['newGame'])) {
+        // Création d'une nouvelle partie
+        $newPartie = new PartieSquadro($player);
+        $partieId = PDOSquadro::createPartieSquadro($player->getNomJoueur(), $newPartie->toJson(0));
+        if ($partieId > 0) {
+            $newPartie->setPartieID($partieId);
+            $_SESSION['partieSquadro'] = $newPartie;
+            header("Location: index.php");
+            exit();
+        } else {
+            $errorMsg = "Une erreur est survenue lors de la création de la partie.";
+        }
+    } elseif (isset($_POST['logout'])) {
+        // Déconnexion
+        session_destroy();
+        header("Location: login.php");
         exit();
     }
 }
 
-// Charger les parties disponibles (en attente et en cours)
-$parties = PDOSquadro::getAllPartieSquadroByPlayerName($player->getNomJoueur());
-$partiesEnAttente = array_filter($parties, fn($p) => $p->gameStatus === 'initialized');
-$partiesEnCours = array_filter($parties, fn($p) => $p->gameStatus === 'inProgress');
-$partiesTerminees = array_filter($parties, fn($p) => $p->gameStatus === 'finished');
-?>
-
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Squadro - Accueil</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-    <script>
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
-            document.getElementById(tabId).style.display = 'block';
+// Traitement pour rejoindre une partie
+if (isset($_GET['partieSquadro'])) {
+    $partieId = $_GET['partieSquadro'];
+    $partieTrouvee = null;
+    foreach ($partiesEnAttente as $partie) {
+        if ($partie->getPartieID() == $partieId) {
+            $partieTrouvee = $partie;
+            break;
         }
-    </script>
-</head>
-<body>
+    }
+    if ($partieTrouvee && $partieTrouvee->gameStatus === 'initialized') {
+        try {
+            PDOSquadro::addPlayerToPartieSquadro($player->getNomJoueur(), $partieId);
+            $updatedPartie = PDOSquadro::getPartieSquadroById($partieId);
+            $_SESSION['partieSquadro'] = $updatedPartie;
+            header("Location: index.php");
+            exit();
+        } catch (\Exception $e) {
+            $errorMsg = "Erreur : " . $e->getMessage();
+        }
+    } else {
+        $errorMsg = "La partie que vous essayez de rejoindre n'est pas disponible ou a déjà commencé.";
+    }
+}
 
-<section class="section">
-    <div class="container">
-        <h1 class="title">Bienvenue, <?= htmlspecialchars($player->getNomJoueur()) ?></h1>
+// Génération du HTML via la fonction intoBalise
 
-        <form method="POST">
-            <button class="button is-primary" type="submit" name="newGame">Créer une nouvelle partie</button>
-        </form>
+// Construction de la section head
+$headContent  = SquadroUIGenerator::intoBalise("meta", "", ["charset" => "UTF-8"]);
+$headContent .= SquadroUIGenerator::intoBalise("meta", "", ["name" => "viewport", "content" => "width=device-width, initial-scale=1"]);
+$headContent .= SquadroUIGenerator::intoBalise("title", "Squadro - Accueil");
+$headContent .= SquadroUIGenerator::intoBalise("link", "", ["rel" => "stylesheet", "href" => "https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"]);
+$head = SquadroUIGenerator::intoBalise("head", $headContent);
 
-        <div class="tabs is-centered">
-            <ul>
-                <li class="is-active"><a href="#" onclick="showTab('partiesEnAttente')">Parties en attente</a></li>
-                <li><a href="#" onclick="showTab('partiesEnCours')">Parties en cours</a></li>
-                <li><a href="#" onclick="showTab('partiesTerminees')">Parties terminées</a></li>
-            </ul>
-        </div>
+// Construction du contenu du body
+$bodyContent = "";
 
-        <div id="partiesEnAttente" class="tab-content">
-            <h2 class="subtitle">Parties en attente</h2>
-            <?php if (empty($partiesEnAttente)) : ?>
-                <p>Aucune partie en attente.</p>
-            <?php else : ?>
-                <ul>
-                    <?php foreach ($partiesEnAttente as $partie) : ?>
-                        <li class="box">
-                            Partie #<?= $partie->getPartieID() ?> - Joueur actif : <?= $partie->getNomJoueurActif($partie->getJoueurActif()->getNomJoueur()) ?>
-                            <a href="index.php?gameId=<?= $partie->getPartieID() ?>" class="button is-link is-small ml-2">Rejoindre</a>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
-        </div>
+// Titre de bienvenue
+$bodyContent .= SquadroUIGenerator::intoBalise("h1", "Bienvenue, " . htmlspecialchars($player->getNomJoueur()), ["class" => "title"]);
 
-        <div id="partiesEnCours" class="tab-content" style="display:none;">
-            <h2 class="subtitle">Parties en cours</h2>
-            <?php if (empty($partiesEnCours)) : ?>
-                <p>Aucune partie en cours.</p>
-            <?php else : ?>
-                <ul>
-                    <?php foreach ($partiesEnCours as $partie) : ?>
-                        <li class="box">Partie #<?= $partie->getPartieID() ?> - Statut : En cours</li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
-        </div>
+// Formulaire pour créer une nouvelle partie
+$newGameButton = SquadroUIGenerator::intoBalise("button", "Créer une nouvelle partie", [
+    "class" => "button is-primary",
+    "type"  => "submit",
+    "name"  => "newGame"
+]);
+$formNewGame  = SquadroUIGenerator::intoBalise("form", $newGameButton, [
+    "method" => "post",
+    "action" => "index.php",
+    "class"  => "mb-4"
+]);
+$bodyContent .= $formNewGame;
 
-        <div id="partiesTerminees" class="tab-content" style="display:none;">
-            <h2 class="subtitle">Parties terminées</h2>
-            <?php if (empty($partiesTerminees)) : ?>
-                <p>Aucune partie terminée.</p>
-            <?php else : ?>
-                <ul>
-                    <?php foreach ($partiesTerminees as $partie) : ?>
-                        <li class="box">Partie #<?= $partie->getPartieID() ?> - Statut : Terminé</li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
-        </div>
-    </div>
-</section>
+// Message d'erreur éventuel
+if (!empty($errorMsg)) {
+    $bodyContent .= SquadroUIGenerator::intoBalise("div", htmlspecialchars($errorMsg), ["class" => "notification is-danger"]);
+}
 
-<script>
-    showTab('partiesEnAttente');
-</script>
+// Colonnes pour afficher les parties
 
-</body>
-</html>
+// Colonne des parties en attente
+$listeAttente = "";
+foreach ($partiesEnAttente as $partie) {
+    $item = "Joueur actif : " . $partie->getNomJoueurActif($partie->getJoueurActif()->getNomJoueur());
+    $link = SquadroUIGenerator::intoBalise("a", "Rejoindre", [
+        "href"  => "index.php?partieSquadro=" . $partie->getPartieID(),
+        "class" => "button is-link is-small ml-2"
+    ]);
+    $listeAttente .= SquadroUIGenerator::intoBalise("li", $item . " " . $link, ["class" => "box"]);
+}
+$colAttente = SquadroUIGenerator::intoBalise("div",
+    SquadroUIGenerator::intoBalise("h2", "Parties en attente", ["class" => "subtitle"]) .
+    SquadroUIGenerator::intoBalise("ul", $listeAttente),
+    ["class" => "column"]
+);
+
+// Colonne des parties en cours
+$listeCours = "";
+foreach ($partiesEnCours as $partie) {
+    $item = "Partie #" . $partie->getPartieID() . " - Statut : " . $partie->gameStatus;
+    $link = SquadroUIGenerator::intoBalise("a", "Accéder au plateau", [
+        "href"  => "public/index.php?partieSquadro=" . $partie->getPartieID(),
+        "class" => "button is-link is-small ml-2"
+    ]);
+    $listeCours .= SquadroUIGenerator::intoBalise("li", $item . " " . $link, ["class" => "box"]);
+}
+$colCours = SquadroUIGenerator::intoBalise("div",
+    SquadroUIGenerator::intoBalise("h2", "Parties en cours", ["class" => "subtitle"]) .
+    SquadroUIGenerator::intoBalise("ul", $listeCours),
+    ["class" => "column"]
+);
+
+// Colonne des parties terminées
+$listeTerminees = "";
+foreach ($partiesTerminees as $partie) {
+    $item = "Partie #" . $partie->getPartieID() . " - Statut : Terminé";
+    $listeTerminees .= SquadroUIGenerator::intoBalise("li", $item, ["class" => "box"]);
+}
+$colTerminees = SquadroUIGenerator::intoBalise("div",
+    SquadroUIGenerator::intoBalise("h2", "Parties terminées", ["class" => "subtitle"]) .
+    SquadroUIGenerator::intoBalise("ul", $listeTerminees),
+    ["class" => "column"]
+);
+
+// Assemblage des colonnes
+$columns = SquadroUIGenerator::intoBalise("div", $colAttente . $colCours . $colTerminees, ["class" => "columns"]);
+$bodyContent .= $columns;
+
+// Formulaire de déconnexion
+$logoutButton = SquadroUIGenerator::intoBalise("button", "Se déconnecter", [
+    "class" => "button is-danger",
+    "type"  => "submit",
+    "name"  => "logout"
+]);
+$formLogout  = SquadroUIGenerator::intoBalise("form", $logoutButton, [
+    "method" => "post",
+    "action" => "index.php"
+]);
+$bodyContent .= $formLogout;
+
+// Encapsulation dans une section et un container
+$container = SquadroUIGenerator::intoBalise("div", $bodyContent, ["class" => "container"]);
+$section   = SquadroUIGenerator::intoBalise("section", $container, ["class" => "section"]);
+$body      = SquadroUIGenerator::intoBalise("body", $section);
+
+// Assemblage complet de la page
+$html = "<!DOCTYPE html>\n" . SquadroUIGenerator::intoBalise("html", $head . $body);
+
+// Affichage de la page
+echo $html;

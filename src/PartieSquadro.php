@@ -1,7 +1,7 @@
 <?php
 
 namespace src;
-
+require_once 'PlateauSquadro.php';
 class PartieSquadro {
     private const PLAYER_ONE = 0;
     public const PLAYER_TWO = 1;
@@ -42,41 +42,41 @@ class PartieSquadro {
     public function getJoueurs() : array {
         return $this->joueurs;
     }
-    public function toJson(int $id) : string {
+    public function toJson(int $id): string {
         return json_encode([
-            'partieId' => $this->getPartieID(),
-            'joueurActif' => $this->getJoueurActif(),
+            'partieId' => $id > 0 ? $id : $this->getPartieID(),
+            'joueurActif' => $this->joueurActif,
             'gameStatus' => $this->gameStatus,
-            'joueurs' => array_map(fn($joueur) => [
-                'nomJoueur' => $joueur->getNomJoueur(),
-                'id' => $joueur->getId()
-            ], $this->joueurs)
+            'joueurs' => array_map(function($joueur) {
+                return [
+                    'nomJoueur' => $joueur->getNomJoueur(),
+                    'id' => $joueur->getId()
+                ];
+            }, $this->joueurs),
+            'plateau' => $this->plateau->toJson()
         ]);
     }
-    public static function fromJson(): PartieSquadro {
-        // On suppose que les données sont stockées en session sous le nom 'partieSquadro'
-        if (!isset($_SESSION['partieSquadro'])) {
-            throw new \Exception("Aucune partie sauvegardée en session !");
-        }
-        $json = $_SESSION['partieSquadro'];
+    public static function fromJson(string $json): PartieSquadro {
         $data = json_decode($json, true);
         if (!$data) {
             throw new \Exception("Données JSON invalides !");
         }
-        // Création de la partie avec le premier joueur
-        $playerOne = new JoueurSquadro($data['joueurs'][self::PLAYER_ONE]['nom'], $data['joueurs'][self::PLAYER_ONE]['id']);
+        $playerOneData = $data['joueurs'][self::PLAYER_ONE];
+        $playerOne = new \src\JoueurSquadro($playerOneData['nomJoueur'], $playerOneData['id']);
+        $partie = new PartieSquadro($playerOne);
 
-        $partie = new self($playerOne);
-        $partie->setPartieID($data['partieId']);
-        $partie->joueurActif = $data['joueurActif'];
-        $partie->gameStatus = $data['gameStatus'];
-        // Ajout du deuxième joueur s'il existe
+        // Si un second joueur existe, on l'ajoute
         if (isset($data['joueurs'][self::PLAYER_TWO])) {
-            $playerTwo = new JoueurSquadro();
-            $playerTwo->setNomJoueur($data['joueurs'][self::PLAYER_TWO]['nom']);
-            $playerTwo->setId($data['joueurs'][self::PLAYER_TWO]['id']);
-            $partie->joueurs[self::PLAYER_TWO] = $playerTwo;
+            $playerTwoData = $data['joueurs'][self::PLAYER_TWO];
+            $playerTwo = new \src\JoueurSquadro($playerTwoData['nomJoueur'], $playerTwoData['id']);
+            $partie->addJoueur($playerTwo);
         }
+
+        // Initialisation de l'état de la partie
+        $partie->gameStatus = $data['gameStatus'];
+        $partie->joueurActif = $data['joueurActif'];
+        $partie->setPartieID($data['partieId']);
+
         return $partie;
     }
 }

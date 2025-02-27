@@ -1,11 +1,14 @@
 <?php
+
 namespace Squadro;
+
 use Squadro\PDOSquadro;
 
 require_once __DIR__ . '../skel/PDOSquadro.php';
 session_start();
 
-function getPageLogin(): string {
+function getPageLogin(): string
+{
     $form = '<!DOCTYPE html>
 <html class="no-js" lang="fr" dir="ltr">
   <head>
@@ -21,7 +24,7 @@ function getPageLogin(): string {
         <div class="box has-text-centered">
           <h1 class="title">Accès au salon Squadro</h1>
           <h2 class="subtitle">Identification du joueur</h2>
-          <form action="'.$_SERVER['PHP_SELF'].'" method="post">
+          <form action="' . $_SERVER['PHP_SELF'] . '" method="post">
             <div class="field">
               <label class="label">Nom</label>
               <div class="control">
