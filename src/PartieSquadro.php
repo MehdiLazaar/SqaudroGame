@@ -56,27 +56,30 @@ class PartieSquadro {
             'plateau' => $this->plateau->toJson()
         ]);
     }
-    public static function fromJson(string $json): PartieSquadro {
+    public static function fromJson(): PartieSquadro {
+        if (!isset($_SESSION['partieSquadro'])) {
+            throw new \Exception("Aucune donnée de partie dans la session");
+        }
+        $json = $_SESSION['partieSquadro'];
         $data = json_decode($json, true);
         if (!$data) {
-            throw new \Exception("Données JSON invalides !");
+            throw new \Exception("Données JSON invalides");
         }
+        // Création du premier joueur
         $playerOneData = $data['joueurs'][self::PLAYER_ONE];
-        $playerOne = new \src\JoueurSquadro($playerOneData['nomJoueur'], $playerOneData['id']);
+        $playerOne = new JoueurSquadro($playerOneData['nomJoueur'], $playerOneData['id']);
         $partie = new PartieSquadro($playerOne);
-
-        // Si un second joueur existe, on l'ajoute
+        // Ajout du second joueur si présent
         if (isset($data['joueurs'][self::PLAYER_TWO])) {
             $playerTwoData = $data['joueurs'][self::PLAYER_TWO];
-            $playerTwo = new \src\JoueurSquadro($playerTwoData['nomJoueur'], $playerTwoData['id']);
+            $playerTwo = new JoueurSquadro($playerTwoData['nomJoueur'], $playerTwoData['id']);
             $partie->addJoueur($playerTwo);
         }
-
-        // Initialisation de l'état de la partie
-        $partie->gameStatus = $data['gameStatus'];
+        $partie->gameStatus  = $data['gameStatus'];
         $partie->joueurActif = $data['joueurActif'];
         $partie->setPartieID($data['partieId']);
-
+        // Reconstitution du plateau
+        $partie->plateau = PlateauSquadro::fromJson($data['plateau']);
         return $partie;
     }
 }

@@ -17,5 +17,6 @@ CREATE TABLE PartieSquadro(
                             CONSTRAINT players CHECK ( playerOne<>playerTwo)
 );
 SELECT * FROM PartieSquadro;
+SELECT * FROM JoueurSquadro;
 
 
