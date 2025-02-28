@@ -62,6 +62,13 @@ class SquadroUIGenerator {
                 </p>
               </div>';
 
+        // Ajout d'un bouton pour retourner à l'accueil (index.php)
+        $boutonRetour = self::intoBalise("a", "Retour à l'accueil", [
+            "href" => "../index.php",
+            "class" => "button is-link"
+        ]);
+        $html .= '<div class="has-text-centered" style="margin-top:20px;">' . $boutonRetour . '</div>';
+
         $html .= self::getFinHTML();
         return $html;
     }
@@ -77,31 +84,37 @@ class SquadroUIGenerator {
     public static function genererPageConfirmerDeplacement(PlateauSquadro $plateau, int $x, int $y): string {
         $html = self::getDebutHTML("Confirmer le déplacement");
 
-        // Message de confirmation
-        $html .= '<div class="notification is-warning has-text-centered">
-                <p class="is-size-5">Confirmez-vous le déplacement de la pièce en 
-                   <strong>(' . $x . ', ' . $y . ')</strong> ?
-                </p>
-              </div>';
-
-        // Boutons de confirmation sous forme de formulaire avec Bulma
-        // 1er formulaire = confirmerChoix
-        $html .= '<div class="buttons is-centered">
-                <form action="../public/traiteActionSquadro.php" method="POST">
-                    <input type="hidden" name="confirmer" value="oui">
-                    <button type="submit" class="button is-success">Oui</button>
-                </form>';
-
-        // 2e formulaire = annulerChoix
-        $html .= '<form action="../public/traiteActionSquadro.php" method="POST">
-                    <input type="hidden" name="action" value="annulerChoix">
-                    <button type="submit" class="button is-danger">Annuler</button>
-              </form>
-              </div>';
+        $html .= '
+    <div class="modal is-active">
+      <div class="modal-background"></div>
+      <div class="modal-card">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Confirmation de déplacement</p>
+        </header>
+        <section class="modal-card-body">
+          <div class="content has-text-centered">
+            <p class="is-size-5">
+              Confirmez-vous le déplacement de la pièce en <strong>(' . $x . ', ' . $y . ')</strong> ?
+            </p>
+          </div>
+        </section>
+        <footer class="modal-card-foot is-justify-content-center">
+          <form action="../public/traiteActionSquadro.php" method="POST" style="margin-right: 1rem;">
+            <input type="hidden" name="confirmer" value="oui">
+            <button type="submit" class="button is-success">Oui</button>
+          </form>
+          <form action="../public/traiteActionSquadro.php" method="POST">
+            <input type="hidden" name="action" value="annulerChoix">
+            <button type="submit" class="button is-danger">Annuler</button>
+          </form>
+        </footer>
+      </div>
+    </div>';
 
         $html .= self::getFinHTML();
         return $html;
     }
+
 
     /**
      * Génère une page pour afficher le plateau final et le message de victoire.
