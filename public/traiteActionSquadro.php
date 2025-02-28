@@ -82,7 +82,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'rejouer') {
     session_start();
 
     // On redirige vers index.php qui va ré-initialiser la partie
-    header("Location: index.php");
+    header("Location: public/index.php");
     exit;
 }
 

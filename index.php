@@ -79,11 +79,21 @@ if (isset($_GET['partieSquadro'])) {
     }
     if ($partieTrouvee && $partieTrouvee->gameStatus === 'initialized') {
         try {
-            PDOSquadro::addPlayerToPartieSquadro($player->getNomJoueur(), $partieId);
+            // Si la session ne contient pas la partie en JSON, on la recharge depuis la BDD
+            if (!isset($_SESSION['partieSquadro'])) {
+                $partie = PDOSquadro::getPartieSquadroById($partieId);
+                $_SESSION['partieSquadro'] = $partie->toJson($partie->getPartieID());
+            } else {
+                // Reconstituer l'objet PartieSquadro depuis le JSON stocké
+                $partie = \src\PartieSquadro::fromJson();
+            }
+            // Appel de la méthode d'ajout avec les trois paramètres
+            PDOSquadro::addPlayerToPartieSquadro($player->getNomJoueur(), $_SESSION['partieSquadro'], $partieId);
+
+            // Recharger la partie depuis la BDD pour obtenir la version mise à jour
             $updatedPartie = PDOSquadro::getPartieSquadroById($partieId);
-            $_SESSION['partieSquadro'] = $updatedPartie;
+            $_SESSION['partieSquadro'] = $updatedPartie->toJson($updatedPartie->getPartieID());
             header("Location: index.php");
-            exit();
         } catch (\Exception $e) {
             $errorMsg = "Erreur : " . $e->getMessage();
         }

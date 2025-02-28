@@ -16,5 +16,6 @@ CREATE TABLE PartieSquadro(
                             json text NOT NULL,
                             CONSTRAINT players CHECK ( playerOne<>playerTwo)
 );
+SELECT * FROM PartieSquadro;
 
 

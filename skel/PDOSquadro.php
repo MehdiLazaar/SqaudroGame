@@ -144,53 +144,25 @@ class PDOSquadro
     /**
      * initialisation et execution de $addPlayerToPartieSquadro la requête préparée pour intégrer le second joueur
      */
-    public static function addPlayerToPartieSquadro(string $playerName, int $gameId): void {
+    public static function addPlayerToPartieSquadro(string $playerName, string $json, int $partieId): void {
         if (!isset(self::$addPlayerToPartieSquadro)) {
             self::$addPlayerToPartieSquadro = self::$pdo->prepare(
                 "UPDATE PartieSquadro 
-             SET json = :json, playerTwo = :playerTwo, gameStatus = :gameStatus 
+             SET json = :json, playerTwo = :playerTwo, gameStatus = 'waitingForPlayer' 
              WHERE partieId = :gameId AND gameStatus = 'initialized'"
             );
         }
-
-        try {
-            self::$pdo->beginTransaction();
-
-            // Récupérer la partie existante depuis la base
-            $game = self::getPartieSquadroById($gameId);
-            if (!$game) {
-                throw new Exception("La partie avec l'ID $gameId n'existe pas.");
-            }
-
-            // Récupérer le joueur (celui qui rejoint)
-            $player = self::selectPlayerByName($playerName);
-            if (!$player) {
-                throw new Exception("Le joueur '$playerName' n'existe pas.");
-            }
-
-            // Ajouter le joueur à la partie (si pas déjà présent)
-            $game->addJoueur($player);
-
-            // Mettre à jour le statut de la partie avec une valeur autorisée
-            $game->gameStatus = 'waitingForPlayer';
-
-            // Calculer le JSON mis à jour (toJson retourne déjà une chaîne JSON)
-            $updatedJson = $game->toJson($gameId);
-
-            // Exécuter la mise à jour en base
-            self::$addPlayerToPartieSquadro->execute([
-                ':json' => $updatedJson,
-                ':playerTwo' => $player->getId(),
-                ':gameStatus' => $game->gameStatus,
-                ':gameId' => $gameId
-            ]);
-
-            self::$pdo->commit();
-        } catch (Exception $e) {
-            self::$pdo->rollBack();
-            error_log("Erreur lors de l'ajout du joueur à la partie : " . $e->getMessage());
-            echo "Erreur lors de l'ajout du joueur à la partie.";
+        // Récupérer le joueur à ajouter
+        $player = self::selectPlayerByName($playerName);
+        if (!$player) {
+            throw new \Exception("Le joueur '$playerName' n'existe pas dans la base de données.");
         }
+        // Exécuter la mise à jour dans la BDD
+        self::$addPlayerToPartieSquadro->execute([
+            ':json' => $json,
+            ':playerTwo' => $player->getId(),
+            ':gameId' => $partieId
+        ]);
     }
 
     /**
